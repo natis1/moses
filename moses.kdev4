@@ -1,4 +1,3 @@
 [Project]
-Name=moses
 Manager=KDevCMakeManager
-VersionControl=kdevgit
+Name=moses
