@@ -1,33 +1,93 @@
 
 #include "fileReader.h"
-
+#include <fstream>
+#include <streambuf>
+#include <sstream>
 
 using namespace std;
 
 
 
-void fileReader(string input_File) {
+
+fileReader::fileReader(string input_File) {
   
   cout << input_File << endl;
+  
   ifstream inputStream(input_File);
-  string inputContent( (istreambuf_iterator<char>(inputStream)), (istreambuf_iterator<char>()) );
+  stringstream inputBuffer;
+  inputBuffer << inputStream.rdbuf();
   
-  double[][] double* elementList= new double[3][getElementNumber(inputContent)];
-  double[][] double* nodeList   = new double[3][getElementNumber(inputContent)];
+  vector<string> inputVector = splitInputString(inputBuffer.str());
+  getNodes (inputVector);
+  getElements (inputVector);
+  
+  for (int i = 0; i < meshData.elementNumber; i++) {
+    cout << meshData.elements[i] << endl; 
+  }
+  
+  for (int i = 0; i < meshData.nodeNumber; i++) {
+    cout << meshData.nodes[i] << endl; 
+  }
+  
   
 }
 
-
-int getElementNumber(string inputContent) {
-  
-  
-  
-  return 1;
+vector<string> fileReader::split(const string &inputContent, char delimiter, vector<string> &elems) {
+  stringstream inputStream(inputContent);
+  string item;
+  while (getline(inputStream, item, delimiter)) {
+    elems.push_back(item);
+  }
+  return elems;
 }
 
-int getNodeNumber(string inputContent) {
+vector<string> fileReader::splitInputString(const string &inputContent) {
+  vector<string> elements;
+  split(inputContent, '\n', elements);
+  return elements;
+}
+
+
+
+
+void fileReader::getNodes(vector<string> inputVector) {
+int nodeStart = -1;
+  for (int i = 0; i < inputVector.size(); i++){
+    if (inputVector[i].compare("$Nodes")) {
+      nodeStart = (i + 1);
+      break;
+    }
+  }
+  if (nodeStart == -1) {
+    cout << "Invalid msh file, unable to find $Nodes" << endl;
+    exit(1);
+  }
+  meshData.nodeNumber = stoi(inputVector[nodeStart]);
+  nodeStart++;
   
+  //Getting a subvector in linear time.
+  vector<string> s(&inputVector[nodeStart],&inputVector[(nodeStart + meshData.nodeNumber)]);
+  meshData.nodes = s;
+}
+
+
+void fileReader::getElements(vector<string> inputVector) {
   
+  int elementStart = -1;
+  for (int i = 0; i < inputVector.size(); i++){
+    if (inputVector[i].compare("$Elements")) {
+      elementStart = (i + 1);
+      break;
+    }
+  }
+  if (elementStart == -1) {
+    cout << "Invalid msh file, unable to find $Elements" << endl;
+    exit(1);
+  }
+  meshData.elementNumber = stoi(inputVector[elementStart]);
+  elementStart++;
   
-  return 1;
+  //Getting a subvector in linear time.
+  vector<string> s(&inputVector[elementStart],&inputVector[ (elementStart + meshData.elementNumber)]);
+  meshData.elements = s;
 }

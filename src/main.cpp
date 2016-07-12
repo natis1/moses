@@ -80,7 +80,17 @@ int main (int argc, char* argv[]) {
   }
   
   if (io.output_File.empty()) {
-    io.output_File = io.input_File + ".exoII";
+    
+    //This will attempt to remove the .msh from the input file. If no .msh is found then this will do nothing.
+    size_t findLocation = io.input_File.find(".msh");
+    
+    string iTemp = io.input_File;
+    // -1 is no location found.
+    if (findLocation != -1) {
+      iTemp.replace (findLocation, string(".msh").length(), "");
+    }
+    
+    io.output_File = iTemp + ".exoII";
   }
   
   fileReader(io.input_File);
