@@ -83,7 +83,7 @@ int main (int argc, char* argv[]) {
     io.output_File = io.input_File + ".exoII";
   }
   
-  fileReader();
+  fileReader(io.input_File);
   
   cout << "Testing" << endl;
   cout << "Input file " << io.input_File << " output file " << io.output_File << endl;

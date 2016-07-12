@@ -1,5 +1,6 @@
 
 //FileReader.h
 
+#include <iostream>
 
-void fileReader();
+void fileReader(std::string input_File);
