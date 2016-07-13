@@ -7,6 +7,7 @@
 
 #include "main.h"
 #include "fileReader.h"
+#include "MSHParser.h"
 
 
 #include <iostream>
@@ -15,26 +16,63 @@
 using namespace std;
 
 
-struct io_Files {
-  string input_File;
-  string output_File;
-};
+
 
 int main (int argc, char* argv[]) {
-  io_Files io;
+  
+  int errorCode = parseInput(argc, argv);
+  
+  if (errorCode != 0) {
+    return 1;
+  }
+
+  
+  
+  if (io.outputFile.empty()) {
+    
+    //This will attempt to remove the .msh from the input file. If no .msh is found then this will do nothing.
+    size_t findLocation = io.inputFiles[0].find(".msh");
+    
+    string iTemp = io.inputFiles[0];
+    // -1 is no location found.
+    if (findLocation != -1) {
+      iTemp.replace (findLocation, string(".msh").length(), "");
+    }
+    
+    io.outputFile = iTemp + ".exoII";
+  }
+  for (int i = 0; i < io.inputFiles.size(); i++) {
+    fileReader(io.inputFiles[i], i);
+  }
+  
+    
+  string input_Mesh = "test.msh";
+  return 0;
+}
+
+
+
+
+int parseInput (int argc, char* argv[]) {
   bool useStandardInput = false;
+  
+  if (argc == 1){
+    cout << "Moses converts GMSH files into ExodusII files for use with Sandia software." << endl;
+    cout << "Please use 'moses -h' to find out how to use this program, or 'man moses'." << endl;
+    return 1;
+  }
   
   for (int current_arg = 1; current_arg < argc; current_arg++){
     if (*argv[current_arg] == '-') {
       if ( (strcmp(argv[current_arg], "-i") == 0 ) || (strcmp(argv[current_arg], "--input") == 0)) {
         cout << "I found your input file" << endl;
         current_arg++;
-        io.input_File=argv[current_arg];
+        io.inputFiles.push_back(argv[current_arg]);
         
       } else if ( (strcmp(argv[current_arg], "-o") == 0 ) || (strcmp(argv[current_arg], "--output") == 0)) {
         cout << "Looking for an output file." << endl;
         current_arg++;
-        io.output_File=argv[current_arg];
+        io.outputFile=argv[current_arg];
         
       } else if ((strcmp(argv[current_arg], "-f") == 0 )) {
         useStandardInput = true;
@@ -44,31 +82,64 @@ int main (int argc, char* argv[]) {
         cout << "Moses converts GMSH files into ExodusII files for use with Sandia software." << endl;
         cout << "" << endl;
         cout << "Example Use:" << endl;
-        cout << "moses -i foo.msh         # Create foo.msh.exoII from data inside foo.msh." << endl;
-        cout << "moses -f -o bar.exoII    # Create bar.exoII from standard input." << endl;
+        cout << "moses -i foo.msh            \t# Create foo.exoII from data inside foo.msh." << endl;
+        cout << "moses -i foo.msh -n fooie   \t# Create foo.exoII with the name 'fooie'" << endl;
         cout << "" << endl;
         cout << "Modifiers:" << endl;
         cout << "" << endl;
-        cout << "-f - Use standard input if no input file is specified." << endl;
-        cout << "-h - View this help menu (see also man moses)." << endl;
-        cout << "-i - Specify an input file." << endl;
-        cout << "-o - Specify an output file." << endl;
+        cout << "-A INT\t\t--exoapi\tAPI version number" << endl;
+        cout << "-d INT\t\t--dimensions\tNumber of dimensions " << endl;
+        cout << "-D INT\t\t--database\tDatabase version number" << endl;
+        cout << "-f \t\t--force\t\tUse standard input if no input file is given." << endl;
+        cout << "-h \t\t--help\t\tView this help menu (see also man moses)." << endl;
+        cout << "-i PATH\t\t--input\t\tOne of more input files." << endl;
+        cout << "-I INT\t\t--io-size\tThe size (in bits) of floats (8)" << endl;
+        cout << "-L INT\t\t--line-length\tThe Exodus Fortran character line length (80)" << endl;
+        cout << "-n STRING\t--name\t\tExodusII mesh name" << endl;
+        cout << "-o PATH\t\t--output\tSpecify a file to write to." << endl;
+        cout << "-S INT\t\t--string-length\tThe Exodus Fortran max string length (32)" << endl;
+        cout << "-Q PATH\t\t--qa-inpath\tRead QA info from file (see man moses)" << endl;
+        
         cout << "" << endl;
         cout << "" << endl;
         cout << "Please look at \"man moses\" for more information" << endl;
         
-        return 0;
+        return 1;
         
+      } else if ((strcmp(argv[current_arg], "-d") == 0 ) || (strcmp(argv[current_arg], "--dimensions") == 0 )) {
+        current_arg++;
+        globals.dimensions = atoi(argv[current_arg]);
+      } else if ((strcmp(argv[current_arg], "-A") == 0 ) || (strcmp(argv[current_arg], "--exoapi") == 0 )) {
+        current_arg++;
+        globals.APIVersionNumber = atoi(argv[current_arg]);
+      } else if ((strcmp(argv[current_arg], "-D") == 0 ) || (strcmp(argv[current_arg], "--database") == 0 )) {
+        current_arg++;
+        globals.databaseVersionNumber = atoi(argv[current_arg]);
+      } else if ((strcmp(argv[current_arg], "-I") == 0 ) || (strcmp(argv[current_arg], "--io-size") == 0 )) {
+        current_arg++;
+        globals.IOWordSize = atoi(argv[current_arg]);
+      } else if ((strcmp(argv[current_arg], "-D") == 0 ) || (strcmp(argv[current_arg], "--line-length") == 0 )) {
+        current_arg++;
+        globals.CharacterLineLength = atoi(argv[current_arg]);
+      } else if ((strcmp(argv[current_arg], "-S") == 0 ) || (strcmp(argv[current_arg], "--string-length") == 0 )) {
+        current_arg++;
+        globals.CharacterStringLength = atoi(argv[current_arg]);
+      } else if ((strcmp(argv[current_arg], "-n") == 0 ) || (strcmp(argv[current_arg], "--name") == 0 )) {
+        current_arg++;
+        globals.title = argv[current_arg];
+      } else if ((strcmp(argv[current_arg], "-Q") == 0 ) || (strcmp(argv[current_arg], "--qa-inpath") == 0 )) {
+        current_arg++;
+        io.qaFile = argv[current_arg];
       }
       
     }
   }
   
-  if (io.input_File.empty() && !useStandardInput) {
+  if (io.inputFiles.empty() && !useStandardInput) {
     cout << "No input file specified. To read an input mesh from stdin use -f" << endl;
     return 1;
-  } else if (io.input_File.empty()) {
-    if (io.output_File.empty()) {
+  } else if (io.inputFiles.empty()) {
+    if (io.outputFile.empty()) {
       cout << "No output specified and no input file to draw on, please append -o [output file]" << endl;
       return 1;
     }
@@ -76,35 +147,6 @@ int main (int argc, char* argv[]) {
     cout << "Attempting to read from standard input" << endl;
     cout << "standard input is not yet supported." << endl;
     return 1;
-    
   }
   
-  if (io.output_File.empty()) {
-    
-    //This will attempt to remove the .msh from the input file. If no .msh is found then this will do nothing.
-    size_t findLocation = io.input_File.find(".msh");
-    
-    string iTemp = io.input_File;
-    // -1 is no location found.
-    if (findLocation != -1) {
-      iTemp.replace (findLocation, string(".msh").length(), "");
-    }
-    
-    io.output_File = iTemp + ".exoII";
-  }
-  
-  fileReader(io.input_File);
-  
-  cout << "Testing" << endl;
-  cout << "Input file " << io.input_File << " output file " << io.output_File << endl;
-  
-  string input_Mesh = "test.msh";
-  return 0;
 }
-
-
-
-
-
-
-

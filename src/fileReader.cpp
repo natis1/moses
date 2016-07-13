@@ -3,13 +3,14 @@
 #include <fstream>
 #include <streambuf>
 #include <sstream>
+#include "MSHParser.h"
 
 using namespace std;
 
 
 
 
-fileReader::fileReader(string input_File) {
+fileReader::fileReader(string input_File, int iter) {
   
   cout << input_File << endl;
   
@@ -18,17 +19,10 @@ fileReader::fileReader(string input_File) {
   inputBuffer << inputStream.rdbuf();
   
   vector<string> inputVector = splitInputString(inputBuffer.str());
-  getNodes (inputVector);
-  getElements (inputVector);
+  setNodes (inputVector);
+  setElements (inputVector);
   
-  for (int i = 0; i < meshData.elementNumber; i++) {
-    cout << meshData.elements[i] << endl; 
-  }
-  
-  for (int i = 0; i < meshData.nodeNumber; i++) {
-    cout << meshData.nodes[i] << endl; 
-  }
-  
+  MSHParser(this->meshData);
   
 }
 
@@ -50,10 +44,10 @@ vector<string> fileReader::splitInputString(const string &inputContent) {
 
 
 
-void fileReader::getNodes(vector<string> inputVector) {
+void fileReader::setNodes(vector<string> inputVector) {
 int nodeStart = -1;
   for (int i = 0; i < inputVector.size(); i++){
-    if (inputVector[i].compare("$Nodes")) {
+    if (inputVector[i].compare("$Nodes") == 0) {
       nodeStart = (i + 1);
       break;
     }
@@ -71,11 +65,11 @@ int nodeStart = -1;
 }
 
 
-void fileReader::getElements(vector<string> inputVector) {
+void fileReader::setElements(vector<string> inputVector) {
   
   int elementStart = -1;
   for (int i = 0; i < inputVector.size(); i++){
-    if (inputVector[i].compare("$Elements")) {
+    if (inputVector[i].compare("$Elements") == 0) {
       elementStart = (i + 1);
       break;
     }
@@ -90,4 +84,28 @@ void fileReader::getElements(vector<string> inputVector) {
   //Getting a subvector in linear time.
   vector<string> s(&inputVector[elementStart],&inputVector[ (elementStart + meshData.elementNumber)]);
   meshData.elements = s;
+}
+
+int fileReader::getElementNumber(){
+  return meshData.elementNumber;
+}
+
+vector< string > fileReader::getElements(){
+  return meshData.elements;
+}
+
+int fileReader::getNodeNumber(){
+  return meshData.nodeNumber;
+}
+
+vector< string > fileReader::getNodes(){
+  return meshData.nodes;
+}
+
+string fileReader::getElement(int element){
+  return meshData.elements[element];
+}
+
+string fileReader::getNode(int node){
+  return meshData.nodes[node];
 }
