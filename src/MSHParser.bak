@@ -1,0 +1,98 @@
+//Mesh input parser
+//Created by Eli on July 8, 2016
+//This file is licensed under the GPLv3
+
+#include <fstream>
+#include "MSHParser.h"
+#include <string>
+#include <cstring>
+#include <iostream>
+
+using namespace std;
+
+
+meshStringData* meshData;
+
+MSHParser::MSHParser(struct meshStringData *meshData) {
+
+
+  cout << "Phase 5 complete" << endl;
+  this->meshData = meshData;
+  cout << "Phase 5.5 complete" << endl;
+  nodeArrayGenerator();
+  cout << "Phase 5.75 complete" << endl;
+  elementArrayGenerator();
+  cout << "Phase 5.875 complete" << endl;
+
+
+}
+
+void MSHParser::nodeArrayGenerator(){
+
+
+  numericalData.nodes.reserve(meshData->nodeNumber);
+
+
+
+  for (int i = 0; i < meshData->nodeNumber; i++) {
+    //Realistically a limit of 80 is probably good enough given the exodus limits but better safe and nobody's gonna be missing 1KB of ram
+
+
+    //Const char to char
+    char line[128];
+    strncpy(line, meshData->nodes[i].c_str(), sizeof(line));
+    char * substrings = strtok (line," -");
+    int dimensions = (sizeof(substrings) / 2) - 1;
+
+
+    //Don't touch this, it doesn't work any other way (for some reason)
+
+    vector<double> v;
+    v.reserve(dimensions);
+    for (int j = 0; j < dimensions; j++) {
+      substrings = strtok (NULL, " -");
+      v.push_back(stod(substrings));
+    }
+    numericalData.nodes.push_back(v);
+
+  }
+
+
+}
+
+void MSHParser::elementArrayGenerator(){
+
+  numericalData.elements.reserve(meshData->elementNumber);
+
+  for (int i = 0; i < meshData->elementNumber; i++) {
+    //Realistically a limit of 80 is probably good enough given the exodus limits but better safe and nobody's gonna be missing 1KB of ram
+
+
+    //Const char to char
+    char line[128];
+    strncpy(line, meshData->elements[i].c_str(), sizeof(line));
+    char * substrings = strtok (line," -");
+    int properties = (sizeof(substrings) / 2);
+
+    //Discard the first datapoint (that is the element number)
+    substrings = strtok (NULL, " -");
+
+    /*
+     * i = element number
+     * j 0 = element type
+     * j 1 = number of tags
+     * j 2..(1+n) = tags
+     * j 2+n..last = nodes
+     */
+
+    vector<int> v;
+    v.reserve(properties);
+    for (int j = 0; j < properties; j++) {
+      substrings = strtok (NULL, " -");
+      v.push_back(stod(substrings));
+    }
+    numericalData.elements.push_back(v);
+  }
+
+}
+

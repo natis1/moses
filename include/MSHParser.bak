@@ -1,0 +1,35 @@
+
+//This file left blank intentionally for some reason.
+//JK It is because I cannot code.
+#pragma once
+
+
+
+#include <vector>
+#include "meshStructures.h"
+
+
+
+
+class MSHParser{
+public:
+  MSHParser(meshStringData* meshData);
+  meshStringData *meshData;
+
+  struct allImportedNumericalMeshData {
+  std::vector<std::vector<double>> nodes;
+  //Elements are stored as a series of nodes referenced by ID
+  std::vector<std::vector<int>> elements;
+} numericalData;
+
+
+
+protected:
+
+
+private:
+  void nodeArrayGenerator();
+  void elementArrayGenerator();
+
+
+};

@@ -19,34 +19,87 @@ using namespace std;
 
 
 int main (int argc, char* argv[]) {
-  
+
   int errorCode = parseInput(argc, argv);
-  
   if (errorCode != 0) {
+
     return 1;
   }
+  cout << "Phase 1 complete" << endl;
 
-  
-  
   if (io.outputFile.empty()) {
-    
+
     //This will attempt to remove the .msh from the input file. If no .msh is found then this will do nothing.
     size_t findLocation = io.inputFiles[0].find(".msh");
-    
+
     string iTemp = io.inputFiles[0];
     // -1 is no location found.
     if (findLocation != -1) {
       iTemp.replace (findLocation, string(".msh").length(), "");
     }
-    
+
     io.outputFile = iTemp + ".exoII";
   }
+
+  recursiveNumericalMeshData importedMeshes;
+
+  importedMeshes.elements.reserve(io.inputFiles.size());
+  importedMeshes.nodes.reserve(io.inputFiles.size());
+
+
   for (int i = 0; i < io.inputFiles.size(); i++) {
-    fileReader(io.inputFiles[i], i);
+    cout << "Phase 2 complete" << endl;
+
+    fileReader file(io.inputFiles[i]);
+
+    fileReader *fi;
+    fi = &file;
+
+    //vector<vector<int>> elements = fi->parser->numericalData.elements;
+
+
+    //importedMeshes.elements[i].reserve(fi->parser->numericalData.elements.size());
+
+    cout << fi->parser->numericalData.elements.size() << endl;
+    cout << fi->parser->numericalData.elements[0].size() << endl;
+    cout << fi->parser->numericalData.nodes.size() << endl;
+
+    for (int j = 0; j < fi->parser->numericalData.elements.size(); j++){
+    //importedMeshes.elements[i][j].reserve(fi->parser->numericalData.elements[j].size());
+      for (int k = 0; k < fi->parser->numericalData.elements[j].size(); k++){
+        //importedMeshes.elements[i][j][k] = fi->parser->numericalData.elements[j][k];
+        cout << fi->parser->numericalData.elements[j][k];
+      }
+      cout << endl;
+    }
+
+
+    importedMeshes.nodes[i].reserve(fi->parser->numericalData.nodes.size());
+
+    for (int j = 0; j < fi->parser->numericalData.nodes.size(); j++){
+//    importedMeshes.nodes[i][j].reserve(fi->parser->numericalData.nodes[j].size());
+      for (int k = 0; k < fi->parser->numericalData.nodes[j].size(); k++){
+//        importedMeshes.nodes[i][j][k] = fi->parser->numericalData.nodes[j][k];
+          cout << fi->parser->numericalData.nodes[j][k];
+      }
+      cout << endl;
+    }
+
+    cout << "Vektor allocation code you wrote actually works" << endl;
+    vector<vector<double>> nodes = fi->parser->numericalData.nodes;
+    importedMeshes.nodes.push_back(nodes);
+    cout << "Vektor allocation DONE!!!!" << endl;
   }
-  
-    
-  string input_Mesh = "test.msh";
+
+
+  for (int i = 0; i < importedMeshes.elements[0].size(); i++) {
+    cout << "Phase 6 complete" << endl;
+
+    cout << importedMeshes.elements[0][i][0] << endl;
+
+  }
+
+
   return 0;
 }
 
@@ -55,28 +108,31 @@ int main (int argc, char* argv[]) {
 
 int parseInput (int argc, char* argv[]) {
   bool useStandardInput = false;
-  
+
   if (argc == 1){
     cout << "Moses converts GMSH files into ExodusII files for use with Sandia software." << endl;
     cout << "Please use 'moses -h' to find out how to use this program, or 'man moses'." << endl;
     return 1;
   }
-  
+
   for (int current_arg = 1; current_arg < argc; current_arg++){
     if (*argv[current_arg] == '-') {
       if ( (strcmp(argv[current_arg], "-i") == 0 ) || (strcmp(argv[current_arg], "--input") == 0)) {
-        cout << "I found your input file" << endl;
         current_arg++;
+        cout << "Input File: " << argv[current_arg] << endl;
         io.inputFiles.push_back(argv[current_arg]);
-        
+
+        cout << "Phase 0 complete" << endl;
+
+
       } else if ( (strcmp(argv[current_arg], "-o") == 0 ) || (strcmp(argv[current_arg], "--output") == 0)) {
         cout << "Looking for an output file." << endl;
         current_arg++;
         io.outputFile=argv[current_arg];
-        
+
       } else if ((strcmp(argv[current_arg], "-f") == 0 )) {
         useStandardInput = true;
-        
+
       } else if ((strcmp(argv[current_arg], "-h") == 0 ) || (strcmp(argv[current_arg], "--help") == 0 )) {
         cout << "Usage: moses [options] -i [FILE]" << endl;
         cout << "Moses converts GMSH files into ExodusII files for use with Sandia software." << endl;
@@ -99,13 +155,13 @@ int parseInput (int argc, char* argv[]) {
         cout << "-o PATH\t\t--output\tSpecify a file to write to." << endl;
         cout << "-S INT\t\t--string-length\tThe Exodus Fortran max string length (32)" << endl;
         cout << "-Q PATH\t\t--qa-inpath\tRead QA info from file (see man moses)" << endl;
-        
+
         cout << "" << endl;
         cout << "" << endl;
         cout << "Please look at \"man moses\" for more information" << endl;
-        
+
         return 1;
-        
+
       } else if ((strcmp(argv[current_arg], "-d") == 0 ) || (strcmp(argv[current_arg], "--dimensions") == 0 )) {
         current_arg++;
         globals.dimensions = atoi(argv[current_arg]);
@@ -131,10 +187,10 @@ int parseInput (int argc, char* argv[]) {
         current_arg++;
         io.qaFile = argv[current_arg];
       }
-      
+
     }
   }
-  
+
   if (io.inputFiles.empty() && !useStandardInput) {
     cout << "No input file specified. To read an input mesh from stdin use -f" << endl;
     return 1;
@@ -143,10 +199,10 @@ int parseInput (int argc, char* argv[]) {
       cout << "No output specified and no input file to draw on, please append -o [output file]" << endl;
       return 1;
     }
-    
+
     cout << "Attempting to read from standard input" << endl;
     cout << "standard input is not yet supported." << endl;
     return 1;
   }
-  
+  return 0;
 }

@@ -1,41 +1,33 @@
 
 //FileReader.h
+#pragma once
 
 #include <iostream>
 #include <vector>
 
-#ifndef FILE_READER
-#define FILE_READER
-
+#include "meshStructures.h"
 
 class fileReader {
 public:
-  fileReader(std::string input_File, int iter);
+  fileReader(std::__cxx11::string input_File);
+  meshStringData meshData;
   
-  struct meshStringData {
-    int elementNumber;
-    std::vector<std::string> elements;
-    int nodeNumber;
-    std::vector<std::string> nodes;
-  } meshData;
-
-  int getElementNumber(void);
-  int getNodeNumber(void);
-  std::vector<std::string> getElements(void);
-  std::vector<std::string> getNodes(void);
-  std::string getNode(int node);
-  std::string getElement(int element);
-  
+  struct allImportedNumericalMeshData {
+    std::vector<std::vector<double>> nodes;
+    //Elements are stored as a series of nodes referenced by ID
+    std::vector<std::vector<int>> elements;
+  } numericalData;
   
 protected:
 
+  
 
 private:
   void setElements(std::vector<std::string> inputVector);
   void setNodes(std::vector<std::string> inputVector);
+  void nodeArrayGenerator();
+  void elementArrayGenerator();
   std::vector<std::string> splitInputString(const std::string &inputContent);
   std::vector<std::string> split(const std::__cxx11::string& inputContent, char delimiter, std::vector< std::__cxx11::string >& elems);
-
+  
 };
-
-#endif

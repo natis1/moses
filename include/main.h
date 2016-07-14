@@ -26,4 +26,12 @@ struct io_Files {
   std::string outputFile;
 } io;
 
+
+struct qa_Data {
+  int applicationCode;  
+  std::string applicationCodeDescriptor;
+  //Date and time in 64 bit unix time format
+  long dateTime;
+};
+
 int parseInput (int argc, char* argv[]);
