@@ -29,6 +29,12 @@ fileReader::fileReader(string input_File) {
   setNodes (inputVector);
   cout << "Phase 3.5 complete" << endl;
   setElements (inputVector);
+  
+  cout << "Phase 3.6 complete" << endl;
+  nodeArrayGenerator();
+  cout << "Phase 3.8 complete" << endl;
+  elementArrayGenerator();
+  
   cout << "Phase 4 complete" << endl;
   
   
@@ -112,7 +118,8 @@ void fileReader::nodeArrayGenerator(){
     char line[128];
     strncpy(line, meshData.nodes[i].c_str(), sizeof(line));
     char * substrings = strtok (line," -");
-    int dimensions = (sizeof(substrings) / 2) - 1;
+    //Actually gets number - 1 because of the way its programmed.
+    int dimensions = getNumberOfSubstrings(meshData.nodes[i]);
     
     
     //Don't touch this, it doesn't work any other way (for some reason)
@@ -142,10 +149,8 @@ void fileReader::elementArrayGenerator(){
     char line[128];
     strncpy(line, meshData.elements[i].c_str(), sizeof(line));
     char * substrings = strtok (line," -");
-    int properties = (sizeof(substrings) / 2);
+    int properties = getNumberOfSubstrings(meshData.elements[i]);
     
-    //Discard the first datapoint (that is the element number)
-    substrings = strtok (NULL, " -");
     
     /*
      * i = element number
@@ -164,6 +169,32 @@ void fileReader::elementArrayGenerator(){
     numericalData.elements.push_back(v);
   }
   
+}
+
+
+int fileReader::getNumberOfSubstrings(string line){
+  
+  int subs = 0;
+  bool previousWasChar = true;
+  for (int i = 0; i < line.length(); i++) {
+    if (previousWasChar){
+      if (line.at(i) == ' '){
+        //Space after some char
+        previousWasChar=false;
+      }
+    } else {
+      if (line.at(i) == ' '){
+        //2 spaces in a row
+        break;
+      } else {
+        //Space to char :)
+        subs++;
+        previousWasChar=true;
+      }
+    }
+  }
+  
+  return subs;
 }
 
 

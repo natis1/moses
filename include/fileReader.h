@@ -27,6 +27,8 @@ private:
   void setNodes(std::vector<std::string> inputVector);
   void nodeArrayGenerator();
   void elementArrayGenerator();
+  
+  int getNumberOfSubstrings(std::string line);
   std::vector<std::string> splitInputString(const std::string &inputContent);
   std::vector<std::string> split(const std::__cxx11::string& inputContent, char delimiter, std::vector< std::__cxx11::string >& elems);
   

@@ -7,7 +7,6 @@
 
 #include "main.h"
 #include "fileReader.h"
-#include "MSHParser.h"
 
 
 #include <iostream>
@@ -55,49 +54,45 @@ int main (int argc, char* argv[]) {
     fileReader *fi;
     fi = &file;
 
-    //vector<vector<int>> elements = fi->parser->numericalData.elements;
+    //vector<vector<int>> elements = fi->numericalData.elements;
 
 
-    //importedMeshes.elements[i].reserve(fi->parser->numericalData.elements.size());
+    //importedMeshes.elements[i].reserve(fi->numericalData.elements.size());
 
-    cout << fi->parser->numericalData.elements.size() << endl;
-    cout << fi->parser->numericalData.elements[0].size() << endl;
-    cout << fi->parser->numericalData.nodes.size() << endl;
-
-    for (int j = 0; j < fi->parser->numericalData.elements.size(); j++){
-    //importedMeshes.elements[i][j].reserve(fi->parser->numericalData.elements[j].size());
-      for (int k = 0; k < fi->parser->numericalData.elements[j].size(); k++){
-        //importedMeshes.elements[i][j][k] = fi->parser->numericalData.elements[j][k];
-        cout << fi->parser->numericalData.elements[j][k];
+    cout << fi->numericalData.elements.size() << endl;
+    cout << fi->numericalData.elements[0].size() << endl;
+    cout << fi->numericalData.nodes.size() << endl;
+    
+    importedMeshes.elements[i] = fi->numericalData.elements;
+    importedMeshes.nodes[i] = fi->numericalData.nodes;
+/*
+    for (int j = 0; j < fi->numericalData.elements.size(); j++){
+    importedMeshes.elements[i][j].reserve(fi->numericalData.elements[j].size());
+      for (int k = 0; k < fi->numericalData.elements[j].size(); k++){
+        importedMeshes.elements[i][j][k] = fi->numericalData.elements[j][k];
       }
-      cout << endl;
     }
+    
+    cout << "Half way there" << endl;
 
+    importedMeshes.nodes[i].reserve(fi->numericalData.nodes.size());
 
-    importedMeshes.nodes[i].reserve(fi->parser->numericalData.nodes.size());
-
-    for (int j = 0; j < fi->parser->numericalData.nodes.size(); j++){
-//    importedMeshes.nodes[i][j].reserve(fi->parser->numericalData.nodes[j].size());
-      for (int k = 0; k < fi->parser->numericalData.nodes[j].size(); k++){
-//        importedMeshes.nodes[i][j][k] = fi->parser->numericalData.nodes[j][k];
-          cout << fi->parser->numericalData.nodes[j][k];
+    for (int j = 0; j < fi->numericalData.nodes.size(); j++){
+    importedMeshes.nodes[i][j].reserve(fi->numericalData.nodes[j].size());
+      for (int k = 0; k < fi->numericalData.nodes[j].size(); k++){
+        importedMeshes.nodes[i][j][k] = fi->numericalData.nodes[j][k];
       }
-      cout << endl;
     }
-
+*/
     cout << "Vektor allocation code you wrote actually works" << endl;
-    vector<vector<double>> nodes = fi->parser->numericalData.nodes;
+    vector<vector<double>> nodes = fi->numericalData.nodes;
     importedMeshes.nodes.push_back(nodes);
     cout << "Vektor allocation DONE!!!!" << endl;
   }
 
-
-  for (int i = 0; i < importedMeshes.elements[0].size(); i++) {
-    cout << "Phase 6 complete" << endl;
-
-    cout << importedMeshes.elements[0][i][0] << endl;
-
-  }
+  cout << "Phase 6 complete" << endl;
+  
+  
 
 
   return 0;
@@ -119,9 +114,20 @@ int parseInput (int argc, char* argv[]) {
     if (*argv[current_arg] == '-') {
       if ( (strcmp(argv[current_arg], "-i") == 0 ) || (strcmp(argv[current_arg], "--input") == 0)) {
         current_arg++;
-        cout << "Input File: " << argv[current_arg] << endl;
-        io.inputFiles.push_back(argv[current_arg]);
-
+        while (current_arg < argc) {
+          if ( *argv[current_arg] != '-' ){
+            io.inputFiles.push_back(argv[current_arg]);
+          } else {
+            break;
+          }
+          current_arg++;
+        }
+        cout << "Input Files: " << endl;
+        for (int i = 0; i < io.inputFiles.size(); i++){
+          cout << io.inputFiles[i] << endl;
+        }
+          
+        
         cout << "Phase 0 complete" << endl;
 
 
