@@ -7,15 +7,20 @@
 
 #include "main.h"
 #include "fileReader.h"
+#include "mergeData.h"
+#include "exoConverter.h"
 
 
 #include <iostream>
 #include <cstring>
 
+
+
+
 using namespace std;
 
 
-
+EXOIIGlobalVariables globals;
 
 int main (int argc, char* argv[]) {
 
@@ -29,9 +34,9 @@ int main (int argc, char* argv[]) {
   if (io.outputFile.empty()) {
 
     //This will attempt to remove the .msh from the input file. If no .msh is found then this will do nothing.
-    size_t findLocation = io.inputFiles[0].find(".msh");
+    size_t findLocation = io.inputFile.find(".msh");
 
-    string iTemp = io.inputFiles[0];
+    string iTemp = io.inputFile;
     // -1 is no location found.
     if (findLocation != -1) {
       iTemp.replace (findLocation, string(".msh").length(), "");
@@ -40,31 +45,48 @@ int main (int argc, char* argv[]) {
     io.outputFile = iTemp + ".exoII";
   }
 
-  recursiveNumericalMeshData importedMeshes;
+  NumericalMeshData importedMeshes;
+  
 
-  importedMeshes.elements.reserve(io.inputFiles.size());
-  importedMeshes.nodes.reserve(io.inputFiles.size());
+  cout << "Phase 2 complete" << endl;
 
+  fileReader file(io.inputFile);
 
-  for (int i = 0; i < io.inputFiles.size(); i++) {
-    cout << "Phase 2 complete" << endl;
+  fileReader *fi;
+  fi = &file;
 
-    fileReader file(io.inputFiles[i]);
-
-    fileReader *fi;
-    fi = &file;
-
-    //vector<vector<int>> elements = fi->numericalData.elements;
+  //vector<vector<int>> elements = fi->numericalData.elements;
 
 
-    //importedMeshes.elements[i].reserve(fi->numericalData.elements.size());
+  //importedMeshes.elements[i].reserve(fi->numericalData.elements.size());
 
-    cout << fi->numericalData.elements.size() << endl;
-    cout << fi->numericalData.elements[0].size() << endl;
-    cout << fi->numericalData.nodes.size() << endl;
+  cout << fi->numericalData.elements.size() << endl;
+  cout << fi->numericalData.elements[0].size() << endl;
+  cout << fi->numericalData.nodes.size() << endl;
     
-    importedMeshes.elements[i] = fi->numericalData.elements;
-    importedMeshes.nodes[i] = fi->numericalData.nodes;
+  globals.elements = fi->meshData.elementNumber;
+  globals.nodes = fi->meshData.elementNumber;
+  cout << "Vektor allocation DONE!!!!" << endl;
+  
+  
+  importedMeshes.nodes = fi->numericalData.nodes;
+  
+  importedMeshes.elements.reserve(globals.elements);
+  
+  cout << importedMeshes.elements.capacity() << endl;
+  
+  cout << "Vektor allocation DONE!!!!" << endl;
+  for (int i = 0; i < globals.elements; i++) {
+
+    importedMeshes.elements.push_back(elementResolver(importedMeshes.nodes, fi->numericalData.elements[i]));
+    //cout << getValue() << "KB Is current ram with " << i << "allocs" << endl;
+  }
+  
+  
+  
+    
+    
+    
 /*
     for (int j = 0; j < fi->numericalData.elements.size(); j++){
     importedMeshes.elements[i][j].reserve(fi->numericalData.elements[j].size());
@@ -84,13 +106,14 @@ int main (int argc, char* argv[]) {
       }
     }
 */
-    cout << "Vektor allocation code you wrote actually works" << endl;
-    vector<vector<double>> nodes = fi->numericalData.nodes;
-    importedMeshes.nodes.push_back(nodes);
-    cout << "Vektor allocation DONE!!!!" << endl;
-  }
+  
+  cout << "Vektor allocation DONE!!!!" << endl;
+  
+  
+  
 
-  cout << "Phase 6 complete" << endl;
+  cout << "Merging Nodes" << endl;
+  
   
   
 
@@ -114,25 +137,14 @@ int parseInput (int argc, char* argv[]) {
     if (*argv[current_arg] == '-') {
       if ( (strcmp(argv[current_arg], "-i") == 0 ) || (strcmp(argv[current_arg], "--input") == 0)) {
         current_arg++;
-        while (current_arg < argc) {
-          if ( *argv[current_arg] != '-' ){
-            io.inputFiles.push_back(argv[current_arg]);
-          } else {
-            break;
-          }
-          current_arg++;
-        }
-        cout << "Input Files: " << endl;
-        for (int i = 0; i < io.inputFiles.size(); i++){
-          cout << io.inputFiles[i] << endl;
-        }
+        io.inputFile = argv[current_arg];
+        cout << "Input File: " << io.inputFile << endl;
+        
           
         
-        cout << "Phase 0 complete" << endl;
-
 
       } else if ( (strcmp(argv[current_arg], "-o") == 0 ) || (strcmp(argv[current_arg], "--output") == 0)) {
-        cout << "Looking for an output file." << endl;
+
         current_arg++;
         io.outputFile=argv[current_arg];
 
@@ -147,17 +159,20 @@ int parseInput (int argc, char* argv[]) {
         cout << "moses -i foo.msh            \t# Create foo.exoII from data inside foo.msh." << endl;
         cout << "moses -i foo.msh -n fooie   \t# Create foo.exoII with the name 'fooie'" << endl;
         cout << "" << endl;
-        cout << "Modifiers:" << endl;
-        cout << "" << endl;
-        cout << "-A INT\t\t--exoapi\tAPI version number" << endl;
-        cout << "-d INT\t\t--dimensions\tNumber of dimensions " << endl;
-        cout << "-D INT\t\t--database\tDatabase version number" << endl;
-        cout << "-f \t\t--force\t\tUse standard input if no input file is given." << endl;
-        cout << "-h \t\t--help\t\tView this help menu (see also man moses)." << endl;
-        cout << "-i PATH\t\t--input\t\tOne of more input files." << endl;
-        cout << "-I INT\t\t--io-size\tThe size (in bits) of floats (8)" << endl;
+        //                                                                                V Any text hitting this line will get cut off in an 80 char
+        cout << "Modifiers:" << endl;//                                                   |
+        cout << "" << endl;//                                                             |Frankly I think this is kind of a stupid limitation
+        cout << "-A INT\t\t--exoapi\tAPI version number" << endl;//                       |I mean I am not writing fortran code
+        cout << "-d INT\t\t--dimensions\tNumber of dimensions " << endl;//                |But like you never know when someone on their
+        cout << "-D INT\t\t--database\tDatabase version number" << endl;//                |3 inch raspberry pi screen is gonna be doing
+        cout << "-f \t\t--force\t\tUse standard input if no input file is given." << endl;// finite element simulations and they need
+        cout << "-h \t\t--help\t\tView this help menu (see also man moses)." << endl;//   | to see what they are doing.
+        cout << "-i PATH\t\t--input\t\tOne of more input files." << endl;//               |
+        cout << "-I INT\t\t--io-size\tThe size (in bits) of floats (8)" << endl;//        | Barely threading the needle
         cout << "-L INT\t\t--line-length\tThe Exodus Fortran character line length (80)" << endl;
-        cout << "-n STRING\t--name\t\tExodusII mesh name" << endl;
+        cout << "-m INT\t\t--minimum-grp\tThe first group converted to node/side sets (10)" << endl;
+        cout << "-M INT\t\t--maximum-grp\tThe last group converted to node/side sets (100)" << endl;
+        cout << "-n STRING\t--name\t\tExodusII mesh name" << endl;//                      |
         cout << "-o PATH\t\t--output\tSpecify a file to write to." << endl;
         cout << "-S INT\t\t--string-length\tThe Exodus Fortran max string length (32)" << endl;
         cout << "-Q PATH\t\t--qa-inpath\tRead QA info from file (see man moses)" << endl;
@@ -192,15 +207,21 @@ int parseInput (int argc, char* argv[]) {
       } else if ((strcmp(argv[current_arg], "-Q") == 0 ) || (strcmp(argv[current_arg], "--qa-inpath") == 0 )) {
         current_arg++;
         io.qaFile = argv[current_arg];
+      } else if ((strcmp(argv[current_arg], "-m") == 0 ) || (strcmp(argv[current_arg], "--minimum-grp") == 0 )) {
+        current_arg++;
+        globals.includedTagMinimum = atoi(argv[current_arg]);
+      } else if ((strcmp(argv[current_arg], "-M") == 0 ) || (strcmp(argv[current_arg], "--maximum-grp") == 0 )) {
+        current_arg++;
+        globals.includedTagMaximum = atoi(argv[current_arg]);
       }
 
     }
   }
 
-  if (io.inputFiles.empty() && !useStandardInput) {
-    cout << "No input file specified. To read an input mesh from stdin use -f" << endl;
+  if (io.inputFile.empty() && !useStandardInput) {
+    cout << "No input file specified." << endl;
     return 1;
-  } else if (io.inputFiles.empty()) {
+  } else if (io.inputFile.empty()) {
     if (io.outputFile.empty()) {
       cout << "No output specified and no input file to draw on, please append -o [output file]" << endl;
       return 1;
@@ -212,3 +233,44 @@ int parseInput (int argc, char* argv[]) {
   }
   return 0;
 }
+
+
+
+
+
+
+
+
+//WARNING WARNING WARNING WARNING WARNING WARNING WARNING
+//DEBUGGING ONLY
+
+#include "stdlib.h"
+#include "stdio.h"
+#include "string.h"
+
+int parseLine(char* line){
+  // This assumes that a digit will be found and the line ends in " Kb".
+  int i = strlen(line);
+  const char* p = line;
+  while (*p <'0' || *p > '9') p++;
+  line[i-3] = '\0';
+  i = atoi(p);
+  return i;
+}
+
+int getValue(){ //Note: this value is in KB!
+  FILE* file = fopen("/proc/self/status", "r");
+  int result = -1;
+  char line[128];
+  
+  while (fgets(line, 128, file) != NULL){
+    if (strncmp(line, "VmRSS:", 6) == 0){
+      result = parseLine(line);
+      break;
+    }
+  }
+  fclose(file);
+  return result;
+}
+
+
