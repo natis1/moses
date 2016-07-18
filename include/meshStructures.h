@@ -35,6 +35,8 @@ struct EXOIIGlobalVariables {
   //NOTE: Data in this range MUST BE nodes or physical lines
   //That is type 15 with 1 node or type 1 with 2 nodes.
   //ALL OTHER DATA IN THIS RANGE WILL BE IGNORED.
+  
+  //Minimum to Minimum + Size = 
   int includedTagMinimum = 10;
   int includedTagMaximum = 100;
 };
@@ -86,6 +88,7 @@ struct exoIIElement {
 };
 
 
+
 struct NumericalMeshData {
   
   //Level 1 is nodes and elements in input files
@@ -103,7 +106,7 @@ struct exoIIElementBlock {
   
   //These determine what the element's type is and are assigned to match the number of nodes on the element
   //In order and respectively these values are as such:
-  // 3/Truss, 9/Quad, 11/Tetra, 13/Pyramid, 15/Prism, 20/Hex
+  // 2/3/4/Truss, 4/8/9/Quad, 4/11/Tetra, 5/13/Pyramid, 6/15/Prism, 8/20/Hex
   //As a result, blockID is also used for setting the "nodes per element" parameter
   int blockID;
   std::string elementType;
@@ -116,8 +119,10 @@ struct exoIIElementBlock {
 
 
 struct exoIISideSetComponent {
-  int startingPoint;
-  int endingPoint;
+  int elementID;
+  int elementSide;
+  
+  int sideSetID;
 };
 
 //One sideset made up of many components

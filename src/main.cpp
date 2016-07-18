@@ -9,6 +9,7 @@
 #include "fileReader.h"
 #include "mergeData.h"
 #include "exoConverter.h"
+#include "sidesetFinder.h"
 
 
 #include <iostream>
@@ -35,7 +36,7 @@ int main (int argc, char* argv[]) {
 
     //This will attempt to remove the .msh from the input file. If no .msh is found then this will do nothing.
     size_t findLocation = io.inputFile.find(".msh");
-
+    
     string iTemp = io.inputFile;
     // -1 is no location found.
     if (findLocation != -1) {
@@ -76,11 +77,22 @@ int main (int argc, char* argv[]) {
   cout << importedMeshes.elements.capacity() << endl;
   
   cout << "Vektor allocation DONE!!!!" << endl;
+  
+  
+  
   for (int i = 0; i < globals.elements; i++) {
 
-    importedMeshes.elements.push_back(elementResolver(importedMeshes.nodes, fi->numericalData.elements[i]));
+    exoIIElement e = elementConverter(elementResolver(importedMeshes.nodes, fi->numericalData.elements[i]));
+    importedMeshes.elements.push_back(e);
+    
+    
     //cout << getValue() << "KB Is current ram with " << i << "allocs" << endl;
   }
+  
+  
+  exoIIInputData allInputs;
+  
+  allInputs.sideSets = automaticSidesetFinder(importedMeshes.elements, globals.includedTagMinimum, globals.includedTagMaximum);
   
   
   

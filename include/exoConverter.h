@@ -19,4 +19,21 @@
 #include <iostream>
 #include <vector>
 
+
+
 exoIIElement elementResolver(std::vector<std::vector<double>> nodeList, std::vector<int> mshElement);
+exoIIElement elementConverter(exoIIElement inputElement);
+
+exoIIElement line2ToExTruss(exoIIElement line2Element);
+exoIIElement line3ToExTruss(exoIIElement line3Element);
+exoIIElement line4ToExTruss(exoIIElement line4Element);
+exoIIElement quad4ToExQuad(exoIIElement quad4Element);
+exoIIElement quad8ToExQuad(exoIIElement quad8Element);
+exoIIElement quad9ToExQuad(exoIIElement quad9Element);
+exoIIElement tetra4ToExTetra(exoIIElement tetra4Element);
+exoIIElement tetra10ToExTetra(exoIIElement tetra10Element);
+exoIIElement hexa8ToExHexa(exoIIElement hexa8Element);
+exoIIElement hexa20ToExHexa(exoIIElement hexa20Element);
+exoIIElement hexa27ToExHexa(exoIIElement hexa27Element);
+
+std::vector<double> getVectorMidpoint (std::vector<std::vector<double>> points);
