@@ -31,3 +31,20 @@ Moses, like all my other one man projects, is licensed under the GPLv3. It basic
 Nothing. It's a pun because it generates exodus(II).
 
 Also it's not the final name but a temporary codename until I wake up with a more creative one.
+
+
+### What is your progress?
+
+My progress is as follows
+
+Initial Build (60%):
+
+[##############################--------------------]
+
+Alpha (0%):
+
+[--------------------------------------------------]
+
+Version 1 (0%):
+
+[--------------------------------------------------]
