@@ -1,0 +1,1 @@
+/usr/bin/c++    -std=c++11 -g   CMakeFiles/moses.dir/src/exoConverter.cpp.o CMakeFiles/moses.dir/src/fileReader.cpp.o CMakeFiles/moses.dir/src/sidesetFinder.cpp.o CMakeFiles/moses.dir/src/mergeData.cpp.o CMakeFiles/moses.dir/src/main.cpp.o  -o moses -rdynamic 

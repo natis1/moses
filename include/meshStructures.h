@@ -97,6 +97,16 @@ struct NumericalMeshData {
   std::vector<exoIIElement> elements;
   
   
+  std::vector<exoIIElement> sidesetElements;
+  std::vector<exoIIElement> nodesetElements;
+  
+  
+};
+
+struct exoIINodesetComponent {
+  
+  int nodeID;
+  int nodesetID;
 };
 
 
@@ -108,7 +118,7 @@ struct exoIIElementBlock {
   //In order and respectively these values are as such:
   // 2/3/4/Truss, 4/8/9/Quad, 4/11/Tetra, 5/13/Pyramid, 6/15/Prism, 8/20/Hex
   //As a result, blockID is also used for setting the "nodes per element" parameter
-  int blockID;
+  //int blockID;
   std::string elementType;
   
   
@@ -135,11 +145,9 @@ struct exoIIInputData {
   
   std::vector<exoIISideSet> sideSets;
   std::vector<std::vector<int>> nodeSets;
-  
   std::vector<exoIIElementBlock> elementBlocks;
   
-  
-  
+  EXOIIGlobalVariables globalVariables;
   
 };
 

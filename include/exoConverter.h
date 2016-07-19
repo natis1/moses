@@ -24,6 +24,13 @@
 exoIIElement elementResolver(std::vector<std::vector<double>> nodeList, std::vector<int> mshElement);
 exoIIElement elementConverter(exoIIElement inputElement);
 
+
+std::vector<exoIIElementBlock> blockResolver(std::vector<exoIIElement> elements);
+std::string blockID(int block);
+
+
+
+exoIIElement point1ToExPoint(exoIIElement point1Element);
 exoIIElement line2ToExTruss(exoIIElement line2Element);
 exoIIElement line3ToExTruss(exoIIElement line3Element);
 exoIIElement line4ToExTruss(exoIIElement line4Element);

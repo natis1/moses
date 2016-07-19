@@ -38,10 +38,99 @@ exoIIElement elementResolver(vector<vector<double>> nodeList, vector<int> mshEle
 }
 
 
+vector<exoIIElementBlock> blockResolver(vector<exoIIElement> elements) {
+  vector<exoIIElementBlock> blocks;
+  blocks.reserve(31);
+  
+  
+
+  
+  vector<exoIIElementBlock> temporaryBlocks;
+  temporaryBlocks.reserve(31);
+  for (int i = 0; i < 31; i++){
+    temporaryBlocks.push_back(exoIIElementBlock{blockID(i)});
+  }
+  for (int i = 0; i < elements.size(); i++) {
+    temporaryBlocks[ elements[i].elementType ].elements.push_back(elements[i]);
+  }
+  
+  
+  for (int i = 0; i < temporaryBlocks.size(); i++) {
+    if (temporaryBlocks[i].elements.size() != 0 ) {
+      blocks.push_back(temporaryBlocks[i]);
+    }
+  }
+  
+  cout << "Successfully generated element blocks" << endl;
+  
+  return blocks;
+}
+
+
+string blockID(int block) {
+  
+  //The format is "number of nodes/geometric shape"
+  //Geometric shape is defined in the exodus manual
+  //http://gsjaardema.github.io/seacas/exodusII-new.pdf
+  //The order, however, follows gmsh.
+  //Keep in mind the number here is zero indexed while the number gmsh uses is 1 indexed
+  switch (block) {
+    //first order
+    case 0: return "2/Trusses";
+    case 1: return "3/Triangles";
+    case 2: return "4/Quadrangles";
+    case 3: return "4/Tetrahedrons";
+    case 4: return "8/Hexahedrons";
+    case 5: return "6/Prisms";
+    case 6: return "5/Pyramids";
+    //second order
+    case 7: return "3/Trusses";
+    case 8: return "6/Triangles";
+    case 9: return "9/Quadrangles";
+    case 10: return "10/Tetrahedrons";
+    case 11: return "27/Hexahedrons";
+    case 12: return "18/Prisms";
+    case 13: return "14/Pyramids";
+    case 14: return "1/Points";
+    case 15: return "8/Quadrangles";
+    case 16: return "20/Hexahedrons";
+    case 17: return "15/Prisms";
+    case 18: return "13/Pyramids";
+    //third+ order
+    
+    //9, 12, 15 triangles are incomplete and may be buggy
+    case 19: return "9/ITriangles";
+    case 20: return "10/Triangles";
+    case 21: return "12/ITriangles";
+    case 22: return "15/ITriangles";
+    case 23: return "15/Triangles";
+    case 24: return "21/Triangles";
+    //TODO: add edges to things which determine sidesets
+    case 25: return "4/Edges";
+    case 26: return "5/Edges";
+    case 27: return "6/Edges";
+    case 28: return "20/Tetrahedrons";
+    case 29: return "35/Tetrahedrons";
+    case 30: return "56/Tetrahedrons";
+    
+    
+    
+    
+    
+    
+    
+    
+  }
+  
+  
+  
+}
+
+
 exoIIElement elementConverter(exoIIElement inputElement) {
   switch (inputElement.elementType) {
     case 1:
-      cout << "2 node lines are not currently supported" << endl;
+      //cout << "2 node lines are not currently supported" << endl;
       return line2ToExTruss(inputElement);
       break;
     case 2:
@@ -54,6 +143,9 @@ exoIIElement elementConverter(exoIIElement inputElement) {
     case 10:
       return quad9ToExQuad(inputElement);
       break;
+    case 15:
+      return point1ToExPoint(inputElement);
+      break;
     case 16:
       return quad8ToExQuad(inputElement);
       break;
@@ -63,7 +155,9 @@ exoIIElement elementConverter(exoIIElement inputElement) {
   exit(1);
 }
 
-
+exoIIElement point1ToExPoint(exoIIElement point1Element) {
+  return point1Element;
+}
 
 exoIIElement line2ToExTruss(exoIIElement line2Element) {
   return line2Element;

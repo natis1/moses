@@ -18,6 +18,9 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -g")
 
 include_directories(${CMAKE_SOURCE_DIR}/include)
 
+
+target_link_libraries(${PROJECT_NAME} ${${PROJECT_NAME}_SEACAS_LIB})
+
 message("${SOURCE_FILES} are files used")
 
 add_executable(${PROJECT_NAME} ${SOURCE_FILES})

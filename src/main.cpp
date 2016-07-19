@@ -21,7 +21,7 @@
 using namespace std;
 
 
-EXOIIGlobalVariables globals;
+EXOIIGlobalVariables globals = {};
 
 int main (int argc, char* argv[]) {
 
@@ -85,41 +85,29 @@ int main (int argc, char* argv[]) {
     exoIIElement e = elementConverter(elementResolver(importedMeshes.nodes, fi->numericalData.elements[i]));
     importedMeshes.elements.push_back(e);
     
-    
     //cout << getValue() << "KB Is current ram with " << i << "allocs" << endl;
   }
   
   
-  exoIIInputData allInputs;
+  cout << "Determining side and nodesets" << endl;
+  importedMeshes.sidesetElements = sideSetExtractor(importedMeshes.elements, globals.includedTagMinimum, globals.includedTagMaximum);
+  importedMeshes.nodesetElements = nodeSetExtractor(importedMeshes.elements, globals.includedTagMinimum, globals.includedTagMaximum);
   
-  allInputs.sideSets = automaticSidesetFinder(importedMeshes.elements, globals.includedTagMinimum, globals.includedTagMaximum);
+  cout << "Removing side and nodeset element determiners from element vector" << endl;
+  
+  importedMeshes.elements = removeSets(importedMeshes.elements, globals.includedTagMinimum, globals.includedTagMaximum);
   
   
+  exoIIInputData allInputs = {vector<exoIISideSet>(), vector<vector<int>>(), vector<exoIIElementBlock>()};
   
-    
-    
-    
-/*
-    for (int j = 0; j < fi->numericalData.elements.size(); j++){
-    importedMeshes.elements[i][j].reserve(fi->numericalData.elements[j].size());
-      for (int k = 0; k < fi->numericalData.elements[j].size(); k++){
-        importedMeshes.elements[i][j][k] = fi->numericalData.elements[j][k];
-      }
-    }
-    
-    cout << "Half way there" << endl;
-
-    importedMeshes.nodes[i].reserve(fi->numericalData.nodes.size());
-
-    for (int j = 0; j < fi->numericalData.nodes.size(); j++){
-    importedMeshes.nodes[i][j].reserve(fi->numericalData.nodes[j].size());
-      for (int k = 0; k < fi->numericalData.nodes[j].size(); k++){
-        importedMeshes.nodes[i][j][k] = fi->numericalData.nodes[j][k];
-      }
-    }
-*/
+  
+  cout << "Scanning elements for side and nodesets" << endl;
+  allInputs.sideSets = automaticSidesetFinder(importedMeshes.elements, globals.includedTagMinimum, globals.includedTagMaximum, importedMeshes.sidesetElements);
+  allInputs.nodeSets = automaticNodesetFinder(importedMeshes.nodes, globals.includedTagMinimum, globals.includedTagMaximum, importedMeshes.nodesetElements);
   
   cout << "Vektor allocation DONE!!!!" << endl;
+  allInputs.elementBlocks = blockResolver(importedMeshes.elements);
+  
   
   
   
@@ -130,7 +118,7 @@ int main (int argc, char* argv[]) {
   
 
 
-  return 0;
+  exit(0);
 }
 
 
