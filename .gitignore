@@ -31,5 +31,9 @@
 *.out
 *.app
 
+# program
+build/
+bin/
+.kdev4/
 
 # Like just stop committing dumb stuff. Okay me?

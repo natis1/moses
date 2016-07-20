@@ -10,6 +10,7 @@
 #include "mergeData.h"
 #include "exoConverter.h"
 #include "sidesetFinder.h"
+#include "exoCommunicator.h"
 
 
 #include <iostream>
@@ -30,8 +31,7 @@ int main (int argc, char* argv[]) {
 
     return 1;
   }
-  cout << "Phase 1 complete" << endl;
-
+  
   if (io.outputFile.empty()) {
 
     //This will attempt to remove the .msh from the input file. If no .msh is found then this will do nothing.
@@ -45,38 +45,23 @@ int main (int argc, char* argv[]) {
 
     io.outputFile = iTemp + ".exoII";
   }
+  globals.directory = io.outputFile;
+  
+  
 
   NumericalMeshData importedMeshes;
   
-
-  cout << "Phase 2 complete" << endl;
-
+  
   fileReader file(io.inputFile);
 
   fileReader *fi;
   fi = &file;
 
-  //vector<vector<int>> elements = fi->numericalData.elements;
-
-
-  //importedMeshes.elements[i].reserve(fi->numericalData.elements.size());
-
-  cout << fi->numericalData.elements.size() << endl;
-  cout << fi->numericalData.elements[0].size() << endl;
-  cout << fi->numericalData.nodes.size() << endl;
-    
+  
   globals.elements = fi->meshData.elementNumber;
   globals.nodes = fi->meshData.elementNumber;
-  cout << "Vektor allocation DONE!!!!" << endl;
-  
-  
   importedMeshes.nodes = fi->numericalData.nodes;
-  
   importedMeshes.elements.reserve(globals.elements);
-  
-  cout << importedMeshes.elements.capacity() << endl;
-  
-  cout << "Vektor allocation DONE!!!!" << endl;
   
   
   
@@ -91,10 +76,7 @@ int main (int argc, char* argv[]) {
   
   cout << "Determining side and nodesets" << endl;
   importedMeshes.sidesetElements = sideSetExtractor(importedMeshes.elements, globals.includedTagMinimum, globals.includedTagMaximum);
-  importedMeshes.nodesetElements = nodeSetExtractor(importedMeshes.elements, globals.includedTagMinimum, globals.includedTagMaximum);
-  
-  cout << "Removing side and nodeset element determiners from element vector" << endl;
-  
+  importedMeshes.nodesetElements = nodeSetExtractor(importedMeshes.elements, globals.includedTagMinimum, globals.includedTagMaximum);  
   importedMeshes.elements = removeSets(importedMeshes.elements, globals.includedTagMinimum, globals.includedTagMaximum);
   
   
@@ -104,20 +86,21 @@ int main (int argc, char* argv[]) {
   cout << "Scanning elements for side and nodesets" << endl;
   allInputs.sideSets = automaticSidesetFinder(importedMeshes.elements, globals.includedTagMinimum, globals.includedTagMaximum, importedMeshes.sidesetElements);
   allInputs.nodeSets = automaticNodesetFinder(importedMeshes.nodes, globals.includedTagMinimum, globals.includedTagMaximum, importedMeshes.nodesetElements);
-  
-  cout << "Vektor allocation DONE!!!!" << endl;
   allInputs.elementBlocks = blockResolver(importedMeshes.elements);
+  allInputs.flippedNodes = flipNodes(importedMeshes.nodes);
+  globals.dimensions = allInputs.flippedNodes.size();
+  globals.elementBlocks = allInputs.elementBlocks.size();
+  globals.sideSets = allInputs.sideSets.size();
+  globals.nodeSets = allInputs.nodeSets.size();
+  
+  
+  cout << "Creating ExodusII library" << endl;
+  allInputs.globalVariables = globals;
+  exoCommunicator(allInputs);
   
   
   
-  
-
-  cout << "Merging Nodes" << endl;
-  
-  
-  
-
-
+  cout << "Everything completed successfully." << endl;
   exit(0);
 }
 

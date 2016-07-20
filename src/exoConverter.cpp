@@ -48,10 +48,10 @@ vector<exoIIElementBlock> blockResolver(vector<exoIIElement> elements) {
   vector<exoIIElementBlock> temporaryBlocks;
   temporaryBlocks.reserve(31);
   for (int i = 0; i < 31; i++){
-    temporaryBlocks.push_back(exoIIElementBlock{blockID(i)});
+    temporaryBlocks.push_back(exoIIElementBlock{blockID(i), nodesPerElement(i)});
   }
   for (int i = 0; i < elements.size(); i++) {
-    temporaryBlocks[ elements[i].elementType ].elements.push_back(elements[i]);
+    temporaryBlocks[ elements[i].elementType - 1 ].elements.push_back(elements[i]);
   }
   
   
@@ -60,69 +60,103 @@ vector<exoIIElementBlock> blockResolver(vector<exoIIElement> elements) {
       blocks.push_back(temporaryBlocks[i]);
     }
   }
-  
-  cout << "Successfully generated element blocks" << endl;
-  
+    
   return blocks;
 }
 
 
 string blockID(int block) {
   
-  //The format is "number of nodes/geometric shape"
+  
   //Geometric shape is defined in the exodus manual
   //http://gsjaardema.github.io/seacas/exodusII-new.pdf
   //The order, however, follows gmsh.
   //Keep in mind the number here is zero indexed while the number gmsh uses is 1 indexed
   switch (block) {
     //first order
-    case 0: return "2/Trusses";
-    case 1: return "3/Triangles";
-    case 2: return "4/Quadrangles";
-    case 3: return "4/Tetrahedrons";
-    case 4: return "8/Hexahedrons";
-    case 5: return "6/Prisms";
-    case 6: return "5/Pyramids";
+    case 0: return "TRUSS";//               2/Trusses
+    case 1: return "TRIANGLE";//             3/Triangles
+    case 2: return "QUADRANGLE";//           4/Quadrangles
+    case 3: return "TETRA";//          4/Tetrahedrons
+    case 4: return "HEX";//           8/Hexahedrons
+    case 5: return "WEDGE";//                6/Prisms
+    case 6: return "PYRAMID";//              5/Pyramids
     //second order
-    case 7: return "3/Trusses";
-    case 8: return "6/Triangles";
-    case 9: return "9/Quadrangles";
-    case 10: return "10/Tetrahedrons";
-    case 11: return "27/Hexahedrons";
-    case 12: return "18/Prisms";
-    case 13: return "14/Pyramids";
-    case 14: return "1/Points";
-    case 15: return "8/Quadrangles";
-    case 16: return "20/Hexahedrons";
-    case 17: return "15/Prisms";
-    case 18: return "13/Pyramids";
+    case 7: return "TRUSS";
+    case 8: return "TRIANGLE";
+    case 9: return "QUADRANGLE";
+    case 10: return "TETRA";
+    case 11: return "HEX";
+    case 12: return "WEDGE";
+    case 13: return "PYRAMID";
+    case 14: return "CIRCLE";  //TODO add circle support
+    case 15: return "QUADRANGLE";
+    case 16: return "HEX";
+    case 17: return "WEDGE";
+    case 18: return "PYRAMID";
     //third+ order
     
     //9, 12, 15 triangles are incomplete and may be buggy
-    case 19: return "9/ITriangles";
-    case 20: return "10/Triangles";
-    case 21: return "12/ITriangles";
-    case 22: return "15/ITriangles";
-    case 23: return "15/Triangles";
-    case 24: return "21/Triangles";
+    //TODO figure out what to do with incomplete triangles
+    case 19: return "TRIANGLE";//incomplete
+    case 20: return "TRIANGLE";
+    case 21: return "TRIANGLE";//incomplete
+    case 22: return "TRIANGLE";//incomplete
+    case 23: return "TRIANGLE";
+    case 24: return "TRIANGLE";
     //TODO: add edges to things which determine sidesets
-    case 25: return "4/Edges";
-    case 26: return "5/Edges";
-    case 27: return "6/Edges";
-    case 28: return "20/Tetrahedrons";
-    case 29: return "35/Tetrahedrons";
-    case 30: return "56/Tetrahedrons";
-    
-    
-    
-    
-    
-    
-    
+    case 25: return "BEAM";//Edges, or 4th-6th order TRUSS
+    case 26: return "BEAM";
+    case 27: return "BEAM";
+    case 28: return "TETRA";//20
+    case 29: return "TETRA";//35
+    case 30: return "TETRA";//56
     
   }
   
   
+  
+}
+
+int nodesPerElement(int block) {
+  
+  switch (block) {
+    //first order
+    case 0: return   2;//         Trusses
+    case 1: return   3;//         Triangles
+    case 2: return   4;//         Quadrangles
+    case 3: return   4;//         Tetrahedrons
+    case 4: return   8;//         Hexahedrons
+    case 5: return   6;//         Prisms
+    case 6: return   5;//         Pyramids
+    //second order
+    case 7: return   3;
+    case 8: return   6;
+    case 9: return   9;
+    case 10: return 10;
+    case 11: return 27;
+    case 12: return 18;
+    case 13: return 14;
+    case 14: return  1;//         TODO add circle support
+    case 15: return  8;
+    case 16: return 20;
+    case 17: return 15;
+    case 18: return 13;
+    //third+ order
+    case 19: return  9;//         incomplete
+    case 20: return 10;
+    case 21: return 12;//         incomplete
+    case 22: return 15;//         incomplete
+    case 23: return 15;
+    case 24: return 21;
+    case 25: return  4;
+    case 26: return  5;
+    case 27: return  6;
+    case 28: return 20;
+    case 29: return 35;
+    case 30: return 56;
+    
+  }
   
 }
 
@@ -154,6 +188,31 @@ exoIIElement elementConverter(exoIIElement inputElement) {
   cout << "3D meshes are not currently supported" << endl;
   exit(1);
 }
+
+
+vector<vector<double>> flipNodes(vector<vector<double>> nodes) {
+  vector<vector<double>> flippedNodes;
+  flippedNodes.reserve(nodes[0].size());
+  
+  for (int i = 0; i < nodes[0].size(); i++) {
+    vector<double> v;
+    v.reserve(nodes.size());
+    for (int j = 0; j < nodes.size(); j++) {
+      v.push_back(nodes[j][i]);
+    }
+    flippedNodes.push_back(v);
+    
+  }
+  
+  return flippedNodes;
+}
+
+
+
+
+
+
+
 
 exoIIElement point1ToExPoint(exoIIElement point1Element) {
   return point1Element;

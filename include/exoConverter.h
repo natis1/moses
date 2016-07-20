@@ -27,6 +27,9 @@ exoIIElement elementConverter(exoIIElement inputElement);
 
 std::vector<exoIIElementBlock> blockResolver(std::vector<exoIIElement> elements);
 std::string blockID(int block);
+int nodesPerElement(int block);
+
+std::vector<std::vector<double>> flipNodes(std::vector<std::vector<double>> nodes);
 
 
 

@@ -15,27 +15,19 @@ using namespace std;
 fileReader::fileReader(string input_File) {
 
   this->meshData = meshData;
-
-  cout << input_File << endl;
-
+  
   ifstream inputStream(input_File);
   stringstream inputBuffer;
   inputBuffer << inputStream.rdbuf();
 
-  cout << "Phase 3 complete" << endl;
   vector<string> inputVector = splitInputString(inputBuffer.str());
 
-  cout << "Phase 3.25 complete" << endl;
   setNodes (inputVector);
-  cout << "Phase 3.5 complete" << endl;
   setElements (inputVector);
   
-  cout << "Phase 3.6 complete" << endl;
   nodeArrayGenerator();
-  cout << "Phase 3.8 complete" << endl;
   elementArrayGenerator();
   
-  cout << "Phase 4 complete" << endl;
   
   
 

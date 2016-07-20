@@ -16,7 +16,9 @@ struct elementWithNodalData {
 
 
 struct EXOIIGlobalVariables {
-  std::string title;
+  
+  std::string directory;
+  std::string title = "untitled_mesh";
   int nodes;
   int dimensions;
   int elements;
@@ -120,7 +122,7 @@ struct exoIIElementBlock {
   //As a result, blockID is also used for setting the "nodes per element" parameter
   //int blockID;
   std::string elementType;
-  
+  int nodesPerElement;  
   
   std::vector<exoIIElement> elements;
 
@@ -141,11 +143,18 @@ struct exoIISideSet {
 };
 
 //One metastructure to rule them all.
+//The exoIIInputData structure contains everything needed to create an exoII file.
+//If additionally functionallity is needed in the exoII file, such as distribution factors
+//one should place it here
 struct exoIIInputData {
   
   std::vector<exoIISideSet> sideSets;
   std::vector<std::vector<int>> nodeSets;
   std::vector<exoIIElementBlock> elementBlocks;
+  
+  std::vector<std::vector<double>> flippedNodes;
+  
+  
   
   EXOIIGlobalVariables globalVariables;
   

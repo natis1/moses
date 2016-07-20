@@ -9,12 +9,5 @@
 #include "meshStructures.h"
 #include <vector>
 
-class exoCommunicator {
-public:
-  exoCommunicator(exoIIInputData inputs);
-  
-protected:
-  
-private:
-  
-};
+
+void exoCommunicator(exoIIInputData inputs);

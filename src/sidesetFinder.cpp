@@ -12,14 +12,11 @@ vector<exoIISideSet> automaticSidesetFinder ( vector<exoIIElement> allElements, 
 
   
   int sidesetCount = 0;
-  
-  cout << "Scanning for sidesets..." << endl;
-  
+    
   
   for (int i = 0; i < sidesetElements.size(); i++) {
     exoIIElement el = sidesetElements[i];
-    cout << "Found sideset element with tag: " << el.elementTag << endl;
-      
+    
     for (int j = 0; j < allElements.size(); j++){
       exoIISideSetComponent ss;
       ss = SSScanner ( el, allElements[j], j, (el.elementTag - minimumSSTag) );
@@ -33,10 +30,6 @@ vector<exoIISideSet> automaticSidesetFinder ( vector<exoIIElement> allElements, 
   
   cout << sidesetCount << " sidesets found from " << sidesetElements.size() << " sideset elements" << endl;
   
-  
-  for (int i = 0; i < sidesets.size(); i++) {
-    cout << sidesets[i].elementID << ", " << sidesets[i].elementSide << endl;
-  }
   
   vector<exoIISideSet> allSidesets;
   
@@ -99,7 +92,6 @@ vector<vector<int>> automaticNodesetFinder ( vector<vector<double>> allNodes, in
   
   int nodesetCount = 0;
   
-  cout << "Scanning for nodesets..." << endl;
   for (int i = 0; i < nodesetElements.size(); i++) {
     exoIIElement el = nodesetElements[i];
     

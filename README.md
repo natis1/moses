@@ -37,9 +37,9 @@ Also it's not the final name but a temporary codename until I wake up with a mor
 
 My progress is as follows
 
-Initial Build (60%):
+Initial Build (100%):
 
-[##############################--------------------]
+[##################################################]
 
 Alpha (0%):
 
