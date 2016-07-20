@@ -1,3 +1,0 @@
-/home/eli/projects/moses/build/CMakeFiles/edit_cache.dir
-/home/eli/projects/moses/build/CMakeFiles/rebuild_cache.dir
-/home/eli/projects/moses/build/CMakeFiles/moses.dir
