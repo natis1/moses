@@ -24,3 +24,7 @@ struct qa_Data {
 int parseInput (int argc, char* argv[]);
 int getValue();
 int parseLine(char* line);
+
+
+
+double cpuTimeTaken(clock_t start, clock_t end);

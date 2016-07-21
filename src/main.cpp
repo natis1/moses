@@ -16,8 +16,9 @@
 #include <iostream>
 #include <cstring>
 
-
-
+//Debugging only
+#include <ctime>
+#include <chrono>
 
 using namespace std;
 
@@ -25,7 +26,9 @@ using namespace std;
 EXOIIGlobalVariables globals = {};
 
 int main (int argc, char* argv[]) {
-
+  
+  
+  
   int errorCode = parseInput(argc, argv);
   if (errorCode != 0) {
 
@@ -52,24 +55,37 @@ int main (int argc, char* argv[]) {
   NumericalMeshData importedMeshes;
   
   
+  chrono::time_point<chrono::system_clock> start, end;
+  
+  start = chrono::system_clock::now();
+  
   fileReader file(io.inputFile);
-
+  
   fileReader *fi;
   fi = &file;
-
+  
+  end = chrono::system_clock::now();
+  chrono::duration<double> elapsedSeconds = end - start;
+  
+  
+  cout << elapsedSeconds.count() << " To read file " << endl;
+  
+  
   
   globals.elements = fi->meshData.elementNumber;
   globals.nodes = fi->meshData.elementNumber;
   importedMeshes.nodes = fi->numericalData.nodes;
   importedMeshes.elements.reserve(globals.elements);
   
-  cout << "Converting elements to pseudo-exodus format";
-  int percentageElements = globals.elements/100;
+  end = chrono::system_clock::now();
+  elapsedSeconds = end - start;
+  cout << elapsedSeconds.count() << " To import meshData " << endl;
+  
+  
+    
+  start = chrono::system_clock::now();
   
   for (int i = 0; i < globals.elements; i++) {
-    if (i % percentageElements == 0){
-      cout << ".";
-    }
     
     exoIIElement e = elementConverter(elementResolver(importedMeshes.nodes, fi->numericalData.elements[i]));
     importedMeshes.elements.push_back(e);
@@ -77,15 +93,26 @@ int main (int argc, char* argv[]) {
     //cout << getValue() << "KB Is current ram with " << i << "allocs" << endl;
   }
   
+  end = chrono::system_clock::now();
+  elapsedSeconds = end - start;
+  cout << elapsedSeconds.count() << " To convert elements" << endl;
+  
+  
+  start = chrono::system_clock::now();
+  
   
   cout << endl << "Allocating side and nodesets" << endl;
   importedMeshes.sidesetElements = sideSetExtractor(importedMeshes.elements, globals.includedTagMinimum, globals.includedTagMaximum);
   importedMeshes.nodesetElements = nodeSetExtractor(importedMeshes.elements, globals.includedTagMinimum, globals.includedTagMaximum);  
   importedMeshes.elements = removeSets(importedMeshes.elements, globals.includedTagMinimum, globals.includedTagMaximum);
   
+  end = chrono::system_clock::now();
+  elapsedSeconds = end - start;
+  cout << elapsedSeconds.count() << " To extract side and nodesets" << endl;
   
   exoIIInputData allInputs = {vector<exoIISideSet>(), vector<vector<int>>(), vector<exoIIElementBlock>()};
   
+  start = chrono::system_clock::now();
   
   allInputs.sideSets = automaticSidesetFinder(importedMeshes.elements, globals.includedTagMinimum, globals.includedTagMaximum, importedMeshes.sidesetElements);
   allInputs.nodeSets = automaticNodesetFinder(importedMeshes.nodes, globals.includedTagMinimum, globals.includedTagMaximum, importedMeshes.nodesetElements);
@@ -96,11 +123,20 @@ int main (int argc, char* argv[]) {
   globals.sideSets = allInputs.sideSets.size();
   globals.nodeSets = allInputs.nodeSets.size();
   
+  end = chrono::system_clock::now();
+  elapsedSeconds = end - start;
+  cout << elapsedSeconds.count() << " To allocate allInputs" << endl;
+  
+  start = chrono::system_clock::now();
+  
   
   cout << "Creating ExodusII library" << endl;
   allInputs.globalVariables = globals;
   exoCommunicator(allInputs);
   
+  end = chrono::system_clock::now();
+  elapsedSeconds = end - start;
+  cout << elapsedSeconds.count() << " To run exodus creation tools" << endl;
   
   
   cout << "Everything completed successfully." << endl;
@@ -229,6 +265,15 @@ int parseInput (int argc, char* argv[]) {
 
 //WARNING WARNING WARNING WARNING WARNING WARNING WARNING
 //DEBUGGING ONLY
+
+
+double cpuTimeTaken(clock_t start, clock_t end) {
+  return double(end - start);
+}
+
+
+
+
 
 #include "stdlib.h"
 #include "stdio.h"
