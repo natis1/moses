@@ -37,6 +37,9 @@ exoIIElement point1ToExPoint(exoIIElement point1Element);
 exoIIElement line2ToExTruss(exoIIElement line2Element);
 exoIIElement line3ToExTruss(exoIIElement line3Element);
 exoIIElement line4ToExTruss(exoIIElement line4Element);
+exoIIElement triangle3ToExTri(exoIIElement triangle3Element);
+exoIIElement triangle6ToExTri(exoIIElement triangle6Element);
+exoIIElement triangle9ToExTri(exoIIElement triangle9Element);
 exoIIElement quad4ToExQuad(exoIIElement quad4Element);
 exoIIElement quad8ToExQuad(exoIIElement quad8Element);
 exoIIElement quad9ToExQuad(exoIIElement quad9Element);
@@ -45,5 +48,13 @@ exoIIElement tetra10ToExTetra(exoIIElement tetra10Element);
 exoIIElement hexa8ToExHexa(exoIIElement hexa8Element);
 exoIIElement hexa20ToExHexa(exoIIElement hexa20Element);
 exoIIElement hexa27ToExHexa(exoIIElement hexa27Element);
+exoIIElement prism6ToExWedge(exoIIElement prism6Element);
+exoIIElement prism15ToExWedge(exoIIElement prism15Element);
+exoIIElement prism18ToExWedge(exoIIElement prism18Element);
+exoIIElement pyramid5ToExPyramid(exoIIElement pyramid5Element);
+exoIIElement pyramid13ToExPyramid(exoIIElement pyramid13Element);
+exoIIElement pyramid14ToExPyramid(exoIIElement pyramid14Element);
+
+
 
 std::vector<double> getVectorMidpoint (std::vector<std::vector<double>> points);

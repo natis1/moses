@@ -24,7 +24,7 @@ fileReader::fileReader(string input_File) {
 
   setNodes (inputVector);
   setElements (inputVector);
-  
+  cout << "Generating node and element arrays" << endl;
   nodeArrayGenerator();
   elementArrayGenerator();
   

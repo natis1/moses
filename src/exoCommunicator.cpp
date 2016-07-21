@@ -21,7 +21,7 @@ void exoCommunicator(exoIIInputData inputs) {
   //computational and IO wordsize. Possible values: 4, 8
   
   //Final int is api version
-  int fileID = ex_create_int(inputs.globalVariables.directory.c_str(), 8, &inputs.globalVariables.IOWordSize,
+  int fileID = ex_create_int(inputs.globalVariables.directory.c_str(), __SIZEOF_DOUBLE__, &inputs.globalVariables.IOWordSize,
                              &inputs.globalVariables.IOWordSize, 633);
   
   

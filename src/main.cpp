@@ -63,10 +63,14 @@ int main (int argc, char* argv[]) {
   importedMeshes.nodes = fi->numericalData.nodes;
   importedMeshes.elements.reserve(globals.elements);
   
-  
+  cout << "Converting elements to pseudo-exodus format";
+  int percentageElements = globals.elements/100;
   
   for (int i = 0; i < globals.elements; i++) {
-
+    if (i % percentageElements == 0){
+      cout << ".";
+    }
+    
     exoIIElement e = elementConverter(elementResolver(importedMeshes.nodes, fi->numericalData.elements[i]));
     importedMeshes.elements.push_back(e);
     
@@ -74,7 +78,7 @@ int main (int argc, char* argv[]) {
   }
   
   
-  cout << "Determining side and nodesets" << endl;
+  cout << endl << "Allocating side and nodesets" << endl;
   importedMeshes.sidesetElements = sideSetExtractor(importedMeshes.elements, globals.includedTagMinimum, globals.includedTagMaximum);
   importedMeshes.nodesetElements = nodeSetExtractor(importedMeshes.elements, globals.includedTagMinimum, globals.includedTagMaximum);  
   importedMeshes.elements = removeSets(importedMeshes.elements, globals.includedTagMinimum, globals.includedTagMaximum);
@@ -83,7 +87,6 @@ int main (int argc, char* argv[]) {
   exoIIInputData allInputs = {vector<exoIISideSet>(), vector<vector<int>>(), vector<exoIIElementBlock>()};
   
   
-  cout << "Scanning elements for side and nodesets" << endl;
   allInputs.sideSets = automaticSidesetFinder(importedMeshes.elements, globals.includedTagMinimum, globals.includedTagMaximum, importedMeshes.sidesetElements);
   allInputs.nodeSets = automaticNodesetFinder(importedMeshes.nodes, globals.includedTagMinimum, globals.includedTagMaximum, importedMeshes.nodesetElements);
   allInputs.elementBlocks = blockResolver(importedMeshes.elements);
