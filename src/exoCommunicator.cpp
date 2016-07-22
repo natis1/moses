@@ -22,7 +22,7 @@ void exoCommunicator(exoIIInputData inputs) {
   
   //Final int is api version
   int fileID = ex_create_int(inputs.globalVariables.directory.c_str(), __SIZEOF_DOUBLE__, &inputs.globalVariables.IOWordSize,
-                             &inputs.globalVariables.IOWordSize, 633);
+                             &inputs.globalVariables.IOWordSize, inputs.globalVariables.databaseVersionNumber);
   
   
   //File ID, title, number of dimensions, number of nodes, number of elements
@@ -57,17 +57,15 @@ void exoCommunicator(exoIIInputData inputs) {
     void* xBuffer = (void *) &(inputs.flippedNodes[0][0]);
     void* yBuffer = (void *) &(inputs.flippedNodes[1][0]);
     
-    void* nullBuffer[inputs.flippedNodes[0].size() * inputs.globalVariables.IOWordSize];
-    memset( nullBuffer, '\0', inputs.flippedNodes[0].size() * inputs.globalVariables.IOWordSize);
+    void* nullBuffer = NULL;
     
     
     errorCode = ex_put_coord(fileID, xBuffer, yBuffer, nullBuffer);
   } else {
     
     void* xBuffer = (void *) &(inputs.flippedNodes[0][0]);
-    void* nullBuffer[inputs.flippedNodes[0].size() * inputs.globalVariables.IOWordSize];
-    memset( nullBuffer, '\0', inputs.flippedNodes[0].size() * inputs.globalVariables.IOWordSize);
-    
+    void* nullBuffer = NULL;
+
     errorCode = ex_put_coord(fileID, xBuffer, nullBuffer, nullBuffer);
   }
   

@@ -20,7 +20,7 @@
 
 using namespace std;
 
-exoIIElement elementResolver(vector<vector<double>> nodeList, vector<int> mshElement) {
+exoIIElement elementResolver(vector<vector<double>> *nodeList, vector<int> mshElement) {
   exoIIElement exoElement;
   
   exoElement.elementType = mshElement[0];
@@ -31,7 +31,7 @@ exoIIElement elementResolver(vector<vector<double>> nodeList, vector<int> mshEle
   
   for (int i = 0; i < nodes; i++){
     exoElement.nodeIDs.push_back(mshElement[2 + mshElement[1] + i]);
-    exoElement.nodalCoordinates.push_back(nodeList[ exoElement.nodeIDs[i] - 1 ]);
+    exoElement.nodalCoordinates.push_back(nodeList->at( exoElement.nodeIDs[i] - 1 ));
   }
   
   return exoElement;

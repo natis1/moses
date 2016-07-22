@@ -1,4 +1,3 @@
-//
 //exoCommunicator.h is a header file for the source code which communicates with seacas
 //
 

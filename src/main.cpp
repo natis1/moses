@@ -15,15 +15,21 @@
 
 #include <iostream>
 #include <cstring>
+#include <dlib/threads.h>
+#include <thread>
 
 //Debugging only
 #include <ctime>
 #include <chrono>
 
+
 using namespace std;
 
 
 EXOIIGlobalVariables globals = {};
+exoIIInputData allInputs;
+NumericalMeshData importedMeshes;
+
 
 int main (int argc, char* argv[]) {
   
@@ -52,7 +58,7 @@ int main (int argc, char* argv[]) {
   
   
 
-  NumericalMeshData importedMeshes;
+  
   
   
   chrono::time_point<chrono::system_clock> start, end;
@@ -70,7 +76,7 @@ int main (int argc, char* argv[]) {
   
   cout << elapsedSeconds.count() << " To read file " << endl;
   
-  
+  start = chrono::system_clock::now();
   
   globals.elements = fi->meshData.elementNumber;
   globals.nodes = fi->meshData.elementNumber;
@@ -85,13 +91,17 @@ int main (int argc, char* argv[]) {
     
   start = chrono::system_clock::now();
   
-  for (int i = 0; i < globals.elements; i++) {
-    
-    exoIIElement e = elementConverter(elementResolver(importedMeshes.nodes, fi->numericalData.elements[i]));
-    importedMeshes.elements.push_back(e);
-    
-    //cout << getValue() << "KB Is current ram with " << i << "allocs" << endl;
-  }
+  
+  //Big O of n^2. Please fix
+  importedMeshes.elements.assign(globals.elements,{});
+  dlib::parallel_for(globals.threads, 0, globals.elements, [&](long i) {
+    importedMeshes.elements[i] = elementConverter(elementResolver(&importedMeshes.nodes, fi->numericalData.elements[i]));
+    if (i % 1000 == 0){
+      cout << "added " << (i + 1) << "/" << globals.elements << "\n";
+    }
+  });
+  
+  
   
   end = chrono::system_clock::now();
   elapsedSeconds = end - start;
@@ -102,20 +112,22 @@ int main (int argc, char* argv[]) {
   
   
   cout << endl << "Allocating side and nodesets" << endl;
-  importedMeshes.sidesetElements = sideSetExtractor(importedMeshes.elements, globals.includedTagMinimum, globals.includedTagMaximum);
-  importedMeshes.nodesetElements = nodeSetExtractor(importedMeshes.elements, globals.includedTagMinimum, globals.includedTagMaximum);  
-  importedMeshes.elements = removeSets(importedMeshes.elements, globals.includedTagMinimum, globals.includedTagMaximum);
+  
+  
+    
+  start = chrono::system_clock::now();
+  
+  thread sidesetAlloc(sidesetsJob);
+  thread nodesetAlloc(nodesetsJob);
+  sidesetAlloc.join(); nodesetAlloc.join();
   
   end = chrono::system_clock::now();
   elapsedSeconds = end - start;
   cout << elapsedSeconds.count() << " To extract side and nodesets" << endl;
   
-  exoIIInputData allInputs = {vector<exoIISideSet>(), vector<vector<int>>(), vector<exoIIElementBlock>()};
   
-  start = chrono::system_clock::now();
   
-  allInputs.sideSets = automaticSidesetFinder(importedMeshes.elements, globals.includedTagMinimum, globals.includedTagMaximum, importedMeshes.sidesetElements);
-  allInputs.nodeSets = automaticNodesetFinder(importedMeshes.nodes, globals.includedTagMinimum, globals.includedTagMaximum, importedMeshes.nodesetElements);
+  importedMeshes.elements = removeSets(importedMeshes.elements, globals.includedTagMinimum, globals.includedTagMaximum);
   allInputs.elementBlocks = blockResolver(importedMeshes.elements);
   allInputs.flippedNodes = flipNodes(importedMeshes.nodes);
   globals.dimensions = allInputs.flippedNodes.size();
@@ -154,6 +166,7 @@ int parseInput (int argc, char* argv[]) {
     cout << "Please use 'moses -h' to find out how to use this program, or 'man moses'." << endl;
     return 1;
   }
+  
 
   for (int current_arg = 1; current_arg < argc; current_arg++){
     if (*argv[current_arg] == '-') {
@@ -196,6 +209,7 @@ int parseInput (int argc, char* argv[]) {
         cout << "-M INT\t\t--maximum-grp\tThe last group converted to node/side sets (100)" << endl;
         cout << "-n STRING\t--name\t\tExodusII mesh name" << endl;//                      |
         cout << "-o PATH\t\t--output\tSpecify a file to write to." << endl;
+        cout << "-t INT\t\t--threads\tThe number of threads to use when possible (1)" << endl;
         cout << "-S INT\t\t--string-length\tThe Exodus Fortran max string length (32)" << endl;
         cout << "-Q PATH\t\t--qa-inpath\tRead QA info from file (see man moses)" << endl;
 
@@ -235,6 +249,9 @@ int parseInput (int argc, char* argv[]) {
       } else if ((strcmp(argv[current_arg], "-M") == 0 ) || (strcmp(argv[current_arg], "--maximum-grp") == 0 )) {
         current_arg++;
         globals.includedTagMaximum = atoi(argv[current_arg]);
+      } else if ((strcmp(argv[current_arg], "-I") == 0 ) || (strcmp(argv[current_arg], "--io-size") == 0 )) {
+        current_arg++;
+        globals.threads = atoi(argv[current_arg]);
       }
 
     }
@@ -259,8 +276,16 @@ int parseInput (int argc, char* argv[]) {
 
 
 
+void sidesetsJob() {
+  allInputs.sideSets = automaticSidesetFinder(&(importedMeshes.elements), globals.includedTagMinimum, globals.includedTagMaximum,
+                                              sideSetExtractor(importedMeshes.elements, globals.includedTagMinimum, globals.includedTagMaximum));  
+}
 
 
+void nodesetsJob() {
+  allInputs.nodeSets = automaticNodesetFinder(&(importedMeshes.nodes), globals.includedTagMinimum, globals.includedTagMaximum,
+                                              nodeSetExtractor(importedMeshes.elements, globals.includedTagMinimum, globals.includedTagMaximum));
+}
 
 
 //WARNING WARNING WARNING WARNING WARNING WARNING WARNING

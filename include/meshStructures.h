@@ -25,8 +25,10 @@ struct EXOIIGlobalVariables {
   int elementBlocks;
   int nodeSets;
   int sideSets;
-  int databaseVersionNumber;
+  int databaseVersionNumber = 634;
   int APIVersionNumber;
+  
+  int threads = 1;
   
   //Why would you even want 4?
   int IOWordSize = 8;
@@ -99,8 +101,8 @@ struct NumericalMeshData {
   std::vector<exoIIElement> elements;
   
   
-  std::vector<exoIIElement> sidesetElements;
-  std::vector<exoIIElement> nodesetElements;
+  //std::vector<exoIIElement> sidesetElements;
+ // std::vector<exoIIElement> nodesetElements;
   
   
 };

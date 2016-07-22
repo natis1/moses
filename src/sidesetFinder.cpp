@@ -4,7 +4,7 @@
 using namespace std;
 
 
-vector<exoIISideSet> automaticSidesetFinder ( vector<exoIIElement> allElements, int minimumSSTag, int maximumSSTag, vector<exoIIElement> sidesetElements) {
+vector<exoIISideSet> automaticSidesetFinder ( vector<exoIIElement> *allElements, int minimumSSTag, int maximumSSTag, vector<exoIIElement> sidesetElements) {
   
   
   
@@ -13,15 +13,18 @@ vector<exoIISideSet> automaticSidesetFinder ( vector<exoIIElement> allElements, 
   
   int sidesetCount = 0;
     
+  //Big O of n*sn (where s is number of sidesets) or n^2 worst case.
   
+  //Solution: Pass 
   for (int i = 0; i < sidesetElements.size(); i++) {
-    exoIIElement el = sidesetElements[i];
+    //exoIIElement el = sidesetElements[i];
     
-    for (int j = 0; j < allElements.size(); j++){
+    for (int j = 0; j < allElements->size(); j++){
       exoIISideSetComponent ss;
-      ss = SSScanner ( el, allElements[j], j, (el.elementTag - minimumSSTag) );
+      ss = SSScanner ( sidesetElements[i], allElements->at(j), j, (sidesetElements[i].elementTag - minimumSSTag) );
       if (ss.elementSide != -1){
         sidesets.push_back(ss);
+        
         sidesetCount++;
       }
     }
@@ -86,7 +89,7 @@ exoIISideSetComponent SSScanner ( exoIIElement sideset, exoIIElement testedEleme
 }
 
 
-vector<vector<int>> automaticNodesetFinder ( vector<vector<double>> allNodes, int minimumSSTag, int maximumSSTag, vector<exoIIElement> nodesetElements) {
+vector<vector<int>> automaticNodesetFinder ( vector<vector<double>> *allNodes, int minimumSSTag, int maximumSSTag, vector<exoIIElement> nodesetElements) {
   
   vector<exoIINodesetComponent> nodesets;
   
@@ -95,15 +98,15 @@ vector<vector<int>> automaticNodesetFinder ( vector<vector<double>> allNodes, in
   for (int i = 0; i < nodesetElements.size(); i++) {
     exoIIElement el = nodesetElements[i];
     
-    for (int j = 0; j < allNodes.size(); j++) {
-      exoIINodesetComponent nodeset = NSScanner ( el, allNodes[j], (el.elementTag - minimumSSTag) );
+    for (int j = 0; j < allNodes->size(); j++) {
+      exoIINodesetComponent nodeset = NSScanner ( el, allNodes->at(j), (el.elementTag - minimumSSTag) );
       if (nodeset.nodeID != -1){
         nodesets.push_back(nodeset);
         nodesetCount++;
       }
     }
   }
-  cout << nodesetCount << " nodesets found from " << nodesetElements.size() << " sideset elements" << endl;
+  cout << nodesetCount << " nodesets found from " << nodesetElements.size() << " nodeset elements" << endl;
   
   vector<vector<int>> allNodesets;
   allNodesets.reserve(maximumSSTag - minimumSSTag + 1);

@@ -8,7 +8,7 @@ For now:
 
 BUILD: PASSING
 
-TESTS: FAILING
+TESTS: Everything seems to work.
 
 verified by me
 

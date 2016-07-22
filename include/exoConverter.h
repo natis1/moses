@@ -21,7 +21,7 @@
 
 
 
-exoIIElement elementResolver(std::vector<std::vector<double>> nodeList, std::vector<int> mshElement);
+exoIIElement elementResolver(std::vector<std::vector<double>> *nodeList, std::vector<int> mshElement);
 exoIIElement elementConverter(exoIIElement inputElement);
 
 

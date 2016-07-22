@@ -25,6 +25,8 @@ int parseInput (int argc, char* argv[]);
 int getValue();
 int parseLine(char* line);
 
+void sidesetsJob();
+void nodesetsJob();
 
 
 double cpuTimeTaken(clock_t start, clock_t end);
