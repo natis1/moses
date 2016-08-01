@@ -89,6 +89,19 @@ exoIISideSetComponent SSScanner ( exoIIElement sideset, exoIIElement testedEleme
 }
 
 
+exoIISideSetComponent TwoDimensionalSSScan (exoIIElement sideset, exoIIElement testedElement) {
+  
+  
+}
+
+//For testing second order quads and shells
+exoIISideSetComponent quadShell89SSScan (exoIIElement sideset, exoIIElement testedElement) {
+  
+  
+  
+}
+
+
 vector<vector<int>> automaticNodesetFinder ( vector< vector< double > >* allNodes, int minimumSSTag, int maximumSSTag, vector<exoIIElement> nodesetElements) {
   
   vector<exoIINodesetComponent> nodesets;
@@ -191,7 +204,8 @@ vector<exoIIElement> sideSetExtractor ( vector<exoIIElement> *originalElementArr
   
   for (int i = 0; i < originalElementArray->size(); i++){
     if (originalElementArray->at(i).elementTag >= minimumSSTag && originalElementArray->at(i).elementTag <= maximumSSTag && 
-      (originalElementArray->at(i).elementType == 15 || originalElementArray->at(i).elementType == 1)){
+      (originalElementArray->at(i).elementType == 15 || originalElementArray->at(i).elementType == 1)
+      || originalElementArray->at(i).elementType == 8){
       sideSetArray.push_back(originalElementArray->at(i));
     }
   }
