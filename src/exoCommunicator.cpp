@@ -88,8 +88,7 @@ void exoCommunicator(exoIIInputData inputs) {
     //Connectivity array format: 0,1 0,2 0,3 0,4 1,1 1,2
     //where x is element and f(x) is node
     vector<int> connectivityArray;
-    connectivityArray.reserve( (inputs.elementBlocks[i].elements.size() *
-                                inputs.elementBlocks[i].elements[0].nodeIDs.size()) );
+    //connectivityArray.reserve( (inputs.elementBlocks[i].elements.size() *inputs.elementBlocks[i].elements[0].nodeIDs.size()) );
     for (int j = 0; j < inputs.elementBlocks[i].elements.size(); j++) {
       for (int k = 0; k < inputs.elementBlocks[i].elements[j].nodeIDs.size(); k++){
         //Get all nodeIDs from each element in order
@@ -113,7 +112,10 @@ void exoCommunicator(exoIIInputData inputs) {
       cout << "Failed to add nodeset params" << endl;
       exit(errorCode);
     }
-    errorCode = ex_put_node_set(fileID, (i+1), &(inputs.nodeSets[i]));
+    
+    int *nodeset = &(inputs.nodeSets[i][0]);
+        
+    errorCode = ex_put_node_set(fileID, (i+1), (void_int*) nodeset);
     
     if (errorCode != 0) {
       cout << "Failed to add nodeset nodes." << endl;
@@ -135,7 +137,10 @@ void exoCommunicator(exoIIInputData inputs) {
       elements[j] = (inputs.sideSets[i].components[j].elementID);
       sides[j] = (inputs.sideSets[i].components[j].elementSide);
     }
-    errorCode = ex_put_side_set(fileID, (i+1), &elements, &sides);
+    int *elementList = &elements[0];
+    int *sideList    = &sides[0];
+    
+    errorCode = ex_put_side_set(fileID, (i+1), elementList, sideList);
     
     if (errorCode != 0) {
       cout << "Failed to add sidesets" << endl;

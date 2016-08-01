@@ -1,10 +1,11 @@
 
 #include "sidesetFinder.h"
+#include <dlib/threads.h>
 
 using namespace std;
 
 
-vector<exoIISideSet> automaticSidesetFinder ( vector<exoIIElement> *allElements, int minimumSSTag, int maximumSSTag, vector<exoIIElement> sidesetElements) {
+vector<exoIISideSet> automaticSidesetFinder ( vector<exoIIElement> *allElements, int minimumSSTag, int maximumSSTag, vector<exoIIElement> sidesetElements, int threads) {
   
   
   
@@ -13,10 +14,9 @@ vector<exoIISideSet> automaticSidesetFinder ( vector<exoIIElement> *allElements,
   
   int sidesetCount = 0;
     
-  //Big O of n*sn (where s is number of sidesets) or n^2 worst case.
   
-  //Solution: Pass 
-  for (int i = 0; i < sidesetElements.size(); i++) {
+  
+  dlib::parallel_for (threads, 0, sidesetElements.size(), [&](long i) {
     //exoIIElement el = sidesetElements[i];
     
     for (int j = 0; j < allElements->size(); j++){
@@ -29,7 +29,7 @@ vector<exoIISideSet> automaticSidesetFinder ( vector<exoIIElement> *allElements,
       }
     }
     
-  }
+  });
   
   cout << sidesetCount << " sidesets found from " << sidesetElements.size() << " sideset elements" << endl;
   
@@ -89,24 +89,49 @@ exoIISideSetComponent SSScanner ( exoIIElement sideset, exoIIElement testedEleme
 }
 
 
-vector<vector<int>> automaticNodesetFinder ( vector<vector<double>> *allNodes, int minimumSSTag, int maximumSSTag, vector<exoIIElement> nodesetElements) {
+vector<vector<int>> automaticNodesetFinder ( vector< vector< double > >* allNodes, int minimumSSTag, int maximumSSTag, vector<exoIIElement> nodesetElements) {
   
   vector<exoIINodesetComponent> nodesets;
   
   int nodesetCount = 0;
   
+  exoIINodesetComponent buffer[6];
+  
+  for (int i = 0; i < 6; i++){
+    buffer[i] = { -1, -1 };
+  }
+  
+
+ 
   for (int i = 0; i < nodesetElements.size(); i++) {
-    exoIIElement el = nodesetElements[i];
     
-    for (int j = 0; j < allNodes->size(); j++) {
-      exoIINodesetComponent nodeset = NSScanner ( el, allNodes->at(j), (el.elementTag - minimumSSTag) );
-      if (nodeset.nodeID != -1){
-        nodesets.push_back(nodeset);
-        nodesetCount++;
+    for (int j = 0; j < nodesetElements[i].nodeIDs.size(); j++){
+      
+      //This prevents duplicate nodes from being added unintentionally to the same nodeset.
+      bool bufferConflict = false;
+      
+      for (int k = 0; k < 6; k++) {
+        //Reused node
+        if (buffer[k].nodeID == nodesetElements[i].nodeIDs[j]){
+          //Check if reused node is in same nodeset
+          if ( (nodesetElements[i].elementTag - minimumSSTag) == buffer[k].nodesetID ) {
+            bufferConflict = true;
+            break;
+          }
+        }
       }
+      
+      if (!bufferConflict) {
+        nodesetCount++;
+        nodesets.push_back( {nodesetElements[i].nodeIDs[j], nodesetElements[i].elementTag - minimumSSTag} );
+        //Rather than changing the buffer order, it's a lot easier to just cycle through it.
+        buffer[nodesetCount % 6] = {nodesetElements[i].nodeIDs[j], nodesetElements[i].elementTag - minimumSSTag};
+        
+      }
+      
     }
   }
-  cout << nodesetCount << " nodesets found from " << nodesetElements.size() << " nodeset elements" << endl;
+  
   
   vector<vector<int>> allNodesets;
   allNodesets.reserve(maximumSSTag - minimumSSTag + 1);
@@ -125,6 +150,8 @@ vector<vector<int>> automaticNodesetFinder ( vector<vector<double>> *allNodes, i
     }
     
   }
+  
+  cout << allNodesets.size() << " nodesets, " << nodesetCount << " nodes, " << nodesetElements.size() << " nodeset elements" << endl;
   
   return allNodesets;
   
@@ -158,13 +185,14 @@ exoIINodesetComponent NSScanner ( exoIIElement nodeset, vector<double> node, int
 
 
 
-vector<exoIIElement> sideSetExtractor ( vector<exoIIElement> originalElementArray, int minimumSSTag, int maximumSSTag ) {
+vector<exoIIElement> sideSetExtractor ( vector<exoIIElement> *originalElementArray, int minimumSSTag, int maximumSSTag ) {
   
   vector<exoIIElement> sideSetArray;
   
-  for (int i = 0; i < originalElementArray.size(); i++){
-    if (originalElementArray[i].elementTag >= minimumSSTag && originalElementArray[i].elementTag <= maximumSSTag && originalElementArray[i].elementType == 1){
-      sideSetArray.push_back(originalElementArray[i]);
+  for (int i = 0; i < originalElementArray->size(); i++){
+    if (originalElementArray->at(i).elementTag >= minimumSSTag && originalElementArray->at(i).elementTag <= maximumSSTag && 
+      (originalElementArray->at(i).elementType == 15 || originalElementArray->at(i).elementType == 1)){
+      sideSetArray.push_back(originalElementArray->at(i));
     }
   }
   
@@ -172,31 +200,34 @@ vector<exoIIElement> sideSetExtractor ( vector<exoIIElement> originalElementArra
 }
 
 
-vector<exoIIElement> removeSets ( vector<exoIIElement> originalElementArray, int minimumSSTag, int maximumSSTag ) {
+vector<exoIIElement> removeSets ( vector<exoIIElement> *originalElementArray, int minimumSSTag, int maximumSSTag ) {
   
   vector<exoIIElement> newElementArray;
   
   //Huge performance boost (~10x) and not much memory loss unless you have tons of sidesets.
-  newElementArray.reserve(originalElementArray.size());
+  newElementArray.reserve(originalElementArray->size());
   
-  for (int i = 0; i < originalElementArray.size(); i++){
-    if ( !(originalElementArray[i].elementTag >= minimumSSTag && originalElementArray[i].elementTag <= maximumSSTag &&
-      (originalElementArray[i].elementType == 1 || originalElementArray[i].elementType == 15) ) ){
-      newElementArray.push_back(originalElementArray[i]);
+  for (int i = 0; i < originalElementArray->size(); i++){
+    if ( !(originalElementArray->at(i).elementTag >= minimumSSTag && originalElementArray->at(i).elementTag <= maximumSSTag &&
+      (originalElementArray->at(i).elementType == 1 || originalElementArray->at(i).elementType == 15
+      || originalElementArray->at(i).elementType == 8) ) ){
+      newElementArray.push_back(originalElementArray->at(i));
     }
   }
   return newElementArray;
   
 }
 
-vector<exoIIElement> nodeSetExtractor ( vector<exoIIElement> originalElementArray, int minimumSSTag, int maximumSSTag ) {
+vector<exoIIElement> nodeSetExtractor ( vector<exoIIElement> *originalElementArray, int minimumSSTag, int maximumSSTag ) {
   
   vector<exoIIElement> nodeSetArray;
   
   
-  for (int i = 0; i < originalElementArray.size(); i++){
-    if (originalElementArray[i].elementTag >= minimumSSTag && originalElementArray[i].elementTag <= maximumSSTag && originalElementArray[i].elementType == 15){
-      nodeSetArray.push_back(originalElementArray[i]);
+  for (int i = 0; i < originalElementArray->size(); i++){
+    if (originalElementArray->at(i).elementTag >= minimumSSTag && originalElementArray->at(i).elementTag <= maximumSSTag &&
+      (originalElementArray->at(i).elementType == 15 || originalElementArray->at(i).elementType == 1
+      || originalElementArray->at(i).elementType == 8)){
+      nodeSetArray.push_back(originalElementArray->at(i));
     }
   }
   

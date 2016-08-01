@@ -74,10 +74,10 @@ string blockID(int block) {
   //Keep in mind the number here is zero indexed while the number gmsh uses is 1 indexed
   switch (block) {
     //first order
-    case 0: return "TRUSS";//               2/Trusses
-    case 1: return "TRIANGLE";//             3/Triangles
-    case 2: return "QUADRANGLE";//           4/Quadrangles
-    case 3: return "TETRA";//          4/Tetrahedrons
+    case 0: return "TRUSS2";//               2/Trusses
+    case 1: return "TRIANGLE3";//             3/Triangles
+    case 2: return "SHELL4";//           4/Quadrangles
+    case 3: return "TETRA4";//          4/Tetrahedrons
     case 4: return "HEX";//           8/Hexahedrons
     case 5: return "WEDGE";//                6/Prisms
     case 6: return "PYRAMID";//              5/Pyramids

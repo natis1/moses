@@ -15,8 +15,8 @@
 
 #include <iostream>
 #include <cstring>
-#include <dlib/threads.h>
 #include <thread>
+#include <dlib/threads.h>
 
 //Debugging only
 #include <ctime>
@@ -79,7 +79,7 @@ int main (int argc, char* argv[]) {
   start = chrono::system_clock::now();
   
   globals.elements = fi->meshData.elementNumber;
-  globals.nodes = fi->meshData.elementNumber;
+  globals.nodes = fi->meshData.nodeNumber;
   importedMeshes.nodes = fi->numericalData.nodes;
   importedMeshes.elements.reserve(globals.elements);
   
@@ -92,7 +92,6 @@ int main (int argc, char* argv[]) {
   start = chrono::system_clock::now();
   
   
-  //Big O of n^2. Please fix
   importedMeshes.elements.assign(globals.elements,{});
   dlib::parallel_for(globals.threads, 0, globals.elements, [&](long i) {
     importedMeshes.elements[i] = elementConverter(elementResolver(&importedMeshes.nodes, fi->numericalData.elements[i]));
@@ -127,9 +126,10 @@ int main (int argc, char* argv[]) {
   
   
   
-  importedMeshes.elements = removeSets(importedMeshes.elements, globals.includedTagMinimum, globals.includedTagMaximum);
+  importedMeshes.elements = removeSets( &(importedMeshes.elements), globals.nodesetTagMin, globals.sidesetTagMax);
   allInputs.elementBlocks = blockResolver(importedMeshes.elements);
   allInputs.flippedNodes = flipNodes(importedMeshes.nodes);
+  globals.elements   = importedMeshes.elements.size();
   globals.dimensions = allInputs.flippedNodes.size();
   globals.elementBlocks = allInputs.elementBlocks.size();
   globals.sideSets = allInputs.sideSets.size();
@@ -142,7 +142,7 @@ int main (int argc, char* argv[]) {
   start = chrono::system_clock::now();
   
   
-  cout << "Creating ExodusII library" << endl;
+  cout << "Creating ExodusII library with " << importedMeshes.nodes.size() << ", " << globals.nodes << " nodes" <<  endl;
   allInputs.globalVariables = globals;
   exoCommunicator(allInputs);
   
@@ -245,10 +245,10 @@ int parseInput (int argc, char* argv[]) {
         io.qaFile = argv[current_arg];
       } else if ((strcmp(argv[current_arg], "-m") == 0 ) || (strcmp(argv[current_arg], "--minimum-grp") == 0 )) {
         current_arg++;
-        globals.includedTagMinimum = atoi(argv[current_arg]);
+        globals.nodesetTagMin = atoi(argv[current_arg]);
       } else if ((strcmp(argv[current_arg], "-M") == 0 ) || (strcmp(argv[current_arg], "--maximum-grp") == 0 )) {
         current_arg++;
-        globals.includedTagMaximum = atoi(argv[current_arg]);
+        globals.nodesetTagMax = atoi(argv[current_arg]);
       } else if ((strcmp(argv[current_arg], "-I") == 0 ) || (strcmp(argv[current_arg], "--io-size") == 0 )) {
         current_arg++;
         globals.threads = atoi(argv[current_arg]);
@@ -277,14 +277,14 @@ int parseInput (int argc, char* argv[]) {
 
 
 void sidesetsJob() {
-  allInputs.sideSets = automaticSidesetFinder(&(importedMeshes.elements), globals.includedTagMinimum, globals.includedTagMaximum,
-                                              sideSetExtractor(importedMeshes.elements, globals.includedTagMinimum, globals.includedTagMaximum));  
+  allInputs.sideSets = automaticSidesetFinder(&(importedMeshes.elements), globals.sidesetTagMin, globals.sidesetTagMax,
+                                              sideSetExtractor( &(importedMeshes.elements), globals.sidesetTagMin, globals.sidesetTagMax), globals.threads);  
 }
 
 
 void nodesetsJob() {
-  allInputs.nodeSets = automaticNodesetFinder(&(importedMeshes.nodes), globals.includedTagMinimum, globals.includedTagMaximum,
-                                              nodeSetExtractor(importedMeshes.elements, globals.includedTagMinimum, globals.includedTagMaximum));
+  allInputs.nodeSets = automaticNodesetFinder(&(importedMeshes.nodes), globals.nodesetTagMin, globals.nodesetTagMax,
+                                              nodeSetExtractor( &(importedMeshes.elements), globals.nodesetTagMin, globals.nodesetTagMax));
 }
 
 

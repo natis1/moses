@@ -41,8 +41,11 @@ struct EXOIIGlobalVariables {
   //ALL OTHER DATA IN THIS RANGE WILL BE IGNORED.
   
   //Minimum to Minimum + Size = 
-  int includedTagMinimum = 10;
-  int includedTagMaximum = 100;
+  int nodesetTagMin = 10;
+  int nodesetTagMax = 100;
+  
+  int sidesetTagMin = 101;
+  int sidesetTagMax = 190;
 };
 
 
