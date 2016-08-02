@@ -5,7 +5,8 @@
 using namespace std;
 
 
-vector<exoIISideSet> automaticSidesetFinder ( vector<exoIIElement> *allElements, int minimumSSTag, int maximumSSTag, vector<exoIIElement> sidesetElements, int threads) {
+vector<exoIISideSet> automaticSidesetFinder ( vector<exoIIElement> *allElements, int minimumSSTag, int maximumSSTag,
+                                              vector<exoIIElement> *sidesetElements, int threads, int elementSize) {
   
   
   
@@ -13,25 +14,29 @@ vector<exoIISideSet> automaticSidesetFinder ( vector<exoIIElement> *allElements,
 
   
   int sidesetCount = 0;
-    
   
   
-  dlib::parallel_for (threads, 0, sidesetElements.size(), [&](long i) {
-    //exoIIElement el = sidesetElements[i];
+  
+  dlib::parallel_for (threads, 0, sidesetElements->size(), [&](long i) {
+    //exoIIElement el = sidesetElements->at(i);
     
-    for (int j = 0; j < allElements->size(); j++){
-      exoIISideSetComponent ss;
-      ss = SSScanner ( sidesetElements[i], allElements->at(j), j, (sidesetElements[i].elementTag - minimumSSTag) );
-      if (ss.elementSide != -1){
-        sidesets.push_back(ss);
+    for (int j = 0; j < elementSize; j++){
+      if ( fastSSScan( &(sidesetElements->at(i)), &(allElements->at(j))) ) {
         
-        sidesetCount++;
+        exoIISideSetComponent ss = SSScanner ( sidesetElements->at(i), allElements->at(j), j, (sidesetElements->at(i).elementTag - minimumSSTag) );
+        if (ss.elementSide != -1){
+          sidesets.push_back(ss);
+          
+          sidesetCount++;
+        }
+        
       }
+      
     }
     
   });
   
-  cout << sidesetCount << " sidesets found from " << sidesetElements.size() << " sideset elements" << endl;
+  cout << sidesetCount << " sidesets found from " << sidesetElements->size() << " sideset elements" << endl;
   
   
   vector<exoIISideSet> allSidesets;
@@ -54,55 +59,157 @@ vector<exoIISideSet> automaticSidesetFinder ( vector<exoIIElement> *allElements,
   return allSidesets;
 }
 
+//A simple system which tells you if you should bother
+bool fastSSScan ( exoIIElement *sideset, exoIIElement *testedElement ) {
+  int maxSSNode = 0;
+  int minSSNode = 1073741824;
+  //I feel like it's faster to just set it to a power of two
+  int maxENode  = 0;
+  int minENode  = 1073741824;
+  for (int i = 0; i < sideset->nodeIDs.size(); i++) {
+    if (sideset->nodeIDs[i] < minSSNode){
+      minSSNode = sideset->nodeIDs[i];
+    }
+    if (sideset->nodeIDs[i] > maxSSNode) {
+      maxSSNode = sideset->nodeIDs[i];
+    }
+  }
+  
+  for (int i = 0; i < testedElement->nodeIDs.size(); i++) {
+    if (testedElement->nodeIDs[i] < minENode){
+      minENode = testedElement->nodeIDs[i];
+    }
+    if (testedElement->nodeIDs[i] > maxENode) {
+      maxENode = testedElement->nodeIDs[i];
+    }
+  }
+  
+  return ( maxSSNode >= minENode && maxENode >= minSSNode );
+}
+
 
 //...ssssssscanner
 //Returns a sideset with element ID -1 and element side -1 if the scan doesn't turn anything up.
 exoIISideSetComponent SSScanner ( exoIIElement sideset, exoIIElement testedElement, int elementID, int sideSetID) {
-  
   exoIISideSetComponent ss;
-  ss.elementID = -1;
-  ss.elementSide = -1;
+  
+  switch (testedElement.elementType) {
+    case  1: ss = TwoDimensionalSSScan(sideset, testedElement, elementID); break;
+    case  2: ss = TwoDimensionalSSScan(sideset, testedElement, elementID); break;
+    case  3: ss = TwoDimensionalSSScan(sideset, testedElement, elementID); break;
+    case  4: ss = tetra4Scan(sideset, testedElement, elementID); break;
+    case  10:ss = quad89SSScan(sideset, testedElement, elementID); break;
+    case  16:ss = quad89SSScan(sideset, testedElement, elementID); break;
+    
+  }
+  //Unknown type but I can try anyway
+  ss = TwoDimensionalSSScan(sideset, testedElement, elementID);
   ss.sideSetID = sideSetID;
-  int elementSize = testedElement.nodeIDs.size();
   
-  if (elementSize == 1){
-    return ss;
-  }
-  
-  
-  for (int i = 0; i < elementSize; i++) {
-    if (testedElement.nodeIDs[i] == sideset.nodeIDs[0]) {
-      if (testedElement.nodeIDs[(i + 1) % elementSize] == sideset.nodeIDs[1]) {
-        ss.elementID = elementID;
-        //It should be i but exodus counts from 1.
-        ss.elementSide = i + 1;
-        return ss;
-      } else if (testedElement.nodeIDs[ ((i - 1) % elementSize + elementSize) % elementSize ] == sideset.nodeIDs[1]) {
-        ss.elementID = elementID;
-        //It should be i - 1 but exodus counts from 1.
-        ss.elementSide = i;
-        return ss;
-      }
-    }
-  }
   return ss;
 }
 
-
-exoIISideSetComponent TwoDimensionalSSScan (exoIIElement sideset, exoIIElement testedElement) {
+//For testing simple elements
+exoIISideSetComponent TwoDimensionalSSScan (exoIIElement sideset, exoIIElement testedElement, int elementID) {
   
+  exoIISideSetComponent ss;
+  int elementSize = testedElement.nodeIDs.size();
+  
+  if (elementSize == 1){
+    return { -1, -1, -1};
+  }
+  
+  int lastNodeMatched = -2;
+  bool firstNodeMatched = false;
+  
+  
+  for (int i = 0; i < elementSize; i++) {
+    for (int j = 0; j < sideset.nodeIDs.size(); j++) {
+      if (sideset.nodeIDs[j] == testedElement.nodeIDs[j]) {
+        
+        if (lastNodeMatched == i - 1 || (firstNodeMatched && i == (elementSize - 1) ) ) {
+          return { elementID, (i + 1), 0 };
+        }
+        
+        if (i == 0) firstNodeMatched = true;
+        lastNodeMatched = i;
+        break;
+      }
+    }
+  }
+  return {-1, -1, -1};
   
 }
 
-//For testing second order quads and shells
-exoIISideSetComponent quadShell89SSScan (exoIIElement sideset, exoIIElement testedElement) {
+
+exoIISideSetComponent tetra4Scan (exoIIElement sideset, exoIIElement testedElement, int elementID) {
+  //If any three points are in sideset then a sideset is formed.
+  //012 = side 0, 123 = side 1, 230 = side 2, 301 = side 3
+  
+  bool overlappingElements[4] = { false };
+  int overlappingCount = 0;
+  
+  for (int i = 0; i < 4; i++) {
+    for (int j = 0; j < sideset.nodeIDs.size(); j++) {
+      if ( testedElement.nodeIDs[i] == sideset.nodeIDs[j] ) {
+        overlappingElements[i] = true;
+        overlappingCount++;
+        break;
+      }
+    }
+  }
+  
+  if (overlappingCount == 3){
+    if (overlappingElements[0] && overlappingElements[1]){
+      if (overlappingElements[2]) {
+        return { elementID, 1, 0};
+      } else {
+        return { elementID, 4, 0};
+      }
+    } else {
+      if (overlappingElements[1]) { 
+        return { elementID, 2, 0};
+      } else {
+        return { elementID, 3, 0};
+      }
+      
+    }
+  }
+  
+  return { -1, -1, -1};
+}
+
+
+
+//For testing second order quads and shells. Only look at 1-4
+exoIISideSetComponent quad89SSScan (exoIIElement sideset, exoIIElement testedElement, int elementID) {
   
   
+  int lastNodeMatched = -2;
+  bool firstNodeMatched = false;
+  
+  for (int i = 0; i < 4; i++) {
+    for (int j = 0; j < sideset.nodeIDs.size(); j++) {
+      if (sideset.nodeIDs[j] == testedElement.nodeIDs[j]) {
+        
+        if (lastNodeMatched == i - 1 || (firstNodeMatched && i == 3) ) {
+          return { elementID, (i + 1), 0 };
+        }
+        
+        if (i == 0) firstNodeMatched = true;
+        lastNodeMatched = i;
+        break;
+      }
+    }
+  }
+  
+  return { -1, -1, -1};
   
 }
 
 
-vector<vector<int>> automaticNodesetFinder ( vector< vector< double > >* allNodes, int minimumSSTag, int maximumSSTag, vector<exoIIElement> nodesetElements) {
+vector<vector<int>> automaticNodesetFinder ( vector< vector< double > >* allNodes, int minimumSSTag, int maximumSSTag,
+                                             vector<exoIIElement> *nodesetElements) {
   
   vector<exoIINodesetComponent> nodesets;
   
@@ -116,18 +223,18 @@ vector<vector<int>> automaticNodesetFinder ( vector< vector< double > >* allNode
   
 
  
-  for (int i = 0; i < nodesetElements.size(); i++) {
+  for (int i = 0; i < nodesetElements->size(); i++) {
     
-    for (int j = 0; j < nodesetElements[i].nodeIDs.size(); j++){
+    for (int j = 0; j < nodesetElements->at(i).nodeIDs.size(); j++){
       
       //This prevents duplicate nodes from being added unintentionally to the same nodeset.
       bool bufferConflict = false;
       
       for (int k = 0; k < 6; k++) {
         //Reused node
-        if (buffer[k].nodeID == nodesetElements[i].nodeIDs[j]){
+        if (buffer[k].nodeID == nodesetElements->at(i).nodeIDs[j]){
           //Check if reused node is in same nodeset
-          if ( (nodesetElements[i].elementTag - minimumSSTag) == buffer[k].nodesetID ) {
+          if ( (nodesetElements->at(i).elementTag - minimumSSTag) == buffer[k].nodesetID ) {
             bufferConflict = true;
             break;
           }
@@ -136,9 +243,9 @@ vector<vector<int>> automaticNodesetFinder ( vector< vector< double > >* allNode
       
       if (!bufferConflict) {
         nodesetCount++;
-        nodesets.push_back( {nodesetElements[i].nodeIDs[j], nodesetElements[i].elementTag - minimumSSTag} );
+        nodesets.push_back( {nodesetElements->at(i).nodeIDs[j], nodesetElements->at(i).elementTag - minimumSSTag} );
         //Rather than changing the buffer order, it's a lot easier to just cycle through it.
-        buffer[nodesetCount % 6] = {nodesetElements[i].nodeIDs[j], nodesetElements[i].elementTag - minimumSSTag};
+        buffer[nodesetCount % 6] = {nodesetElements->at(i).nodeIDs[j], nodesetElements->at(i).elementTag - minimumSSTag};
         
       }
       
@@ -164,7 +271,7 @@ vector<vector<int>> automaticNodesetFinder ( vector< vector< double > >* allNode
     
   }
   
-  cout << allNodesets.size() << " nodesets, " << nodesetCount << " nodes, " << nodesetElements.size() << " nodeset elements" << endl;
+  cout << allNodesets.size() << " nodesets, " << nodesetCount << " nodes, " << nodesetElements->size() << " nodeset elements" << endl;
   
   return allNodesets;
   

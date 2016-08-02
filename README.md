@@ -1,18 +1,21 @@
 # Moses
+Msh Object Set Exodus Saver
+
 Finite Elements: Infinite Possibilities™
 
 (Note: possibilities not actually infinite but, let's just say there are at least 2^8^2^32, and at most ~ 2^(10^7470) possibilities based on your compiler, a number so high it's basically infinity.)
 
-TODO: Stick build badge here. Also make some continuous integration thingy. IDK If this is a personal project I am not gonna bother (maybe I will write a test suite)
-For now:
 
-BUILD: PASSING
+Project Progress:
 
-TESTS: Everything seems to work.
+Mesh importing: Working (linear time)
 
-verified by me
+Nodeset Detection: Working (linear time)
 
-I try not to commit a failing project unless it's 5PM on Friday.
+Sideset Detection: Works with first order 2D, tetrahedrons, and second order quads (n^2 time). Will add support for other 3d and second order shapes before the alpha release.
+
+Exodus Files: Working. TODO: add 2d node support.
+
 
 The only open source way to convert GMSH to Exodus nodesets et. all. Designed for programs like Seacas and Goma.
 
@@ -20,18 +23,19 @@ For more information on this and my other projects, please see the website.
 
 
 ### Building Moses
-Don't. Wait for me to actually have a decent version of this up and running and then build it. But until then I will continue coding.
 
-When it does get finished, you will be able to use cmake to build it on any platform (I can't believe it either but I'm told you can compile code on Windows 10).
 
 ### License information
 Moses, like all my other one man projects, is licensed under the GPLv3. It basically means you can reuse this code in your open source projects (or personal ones) as long as you keep it open source. If you want to use this code but not distribute it (editing it for your own benefit), the GPL allows you to do so. Fork my projects and let's make the best Exodus generator around.
 
 ### What does the name stand for?
-Nothing. It's a pun because it generates exodus(II).
+Moses is the Msh Object Set Exodus Saver. It saves Gmsh .msh files as exodus files while extracting object sets (nodesets and sidesets).
 
-Also it's not the final name but a temporary codename until I wake up with a more creative one.
+### What are exodus files?
+These are files used by SEACAS and other Sandia Laboritories code which was recently made open source. For more information on these files, [please look at their manuals](http://gsjaardema.github.io/seacas/). While billions of tax dollars in programs which use meshes were released to the public for free, no good mesh generators (cubit, for example) came alongside these. This project fills that gap by allowing you to generate meshes in gmsh and export them to exodus.
 
+### How do I specify sidesets and nodesets?
+I will create a guide on doing this before the final release. Effectively add lines, nodes, and eventually surfaces to tags and these will automatically detect side and nodesets.
 
 ### What is your progress?
 
@@ -41,9 +45,9 @@ Initial Build (100%):
 
 [##################################################]
 
-Alpha (0%):
+Alpha (40%):
 
-[--------------------------------------------------]
+[#################---------------------------------]
 
 Version 1 (0%):
 

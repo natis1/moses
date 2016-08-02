@@ -103,6 +103,9 @@ struct NumericalMeshData {
   std::vector<std::vector<double>> nodes;
   std::vector<exoIIElement> elements;
   
+  //Contains element number with removed elements;
+  int actualElementNumber;
+  
   
   //std::vector<exoIIElement> sidesetElements;
  // std::vector<exoIIElement> nodesetElements;

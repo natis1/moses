@@ -116,6 +116,8 @@ int main (int argc, char* argv[]) {
     
   start = chrono::system_clock::now();
   
+  importedMeshes.actualElementNumber = removeSets( &(importedMeshes.elements), globals.nodesetTagMin, globals.sidesetTagMax).size();
+  
   thread sidesetAlloc(sidesetsJob);
   thread nodesetAlloc(nodesetsJob);
   sidesetAlloc.join(); nodesetAlloc.join();
@@ -277,14 +279,15 @@ int parseInput (int argc, char* argv[]) {
 
 
 void sidesetsJob() {
+  vector<exoIIElement> sidesets = sideSetExtractor( &(importedMeshes.elements), globals.sidesetTagMin, globals.sidesetTagMax);
   allInputs.sideSets = automaticSidesetFinder(&(importedMeshes.elements), globals.sidesetTagMin, globals.sidesetTagMax,
-                                              sideSetExtractor( &(importedMeshes.elements), globals.sidesetTagMin, globals.sidesetTagMax), globals.threads);  
+&sidesets, globals.threads, importedMeshes.actualElementNumber);  
 }
 
 
 void nodesetsJob() {
-  allInputs.nodeSets = automaticNodesetFinder(&(importedMeshes.nodes), globals.nodesetTagMin, globals.nodesetTagMax,
-                                              nodeSetExtractor( &(importedMeshes.elements), globals.nodesetTagMin, globals.nodesetTagMax));
+  vector<exoIIElement> nodesets = nodeSetExtractor( &(importedMeshes.elements), globals.nodesetTagMin, globals.nodesetTagMax);
+  allInputs.nodeSets = automaticNodesetFinder(&(importedMeshes.nodes), globals.nodesetTagMin, globals.nodesetTagMax, &nodesets);
 }
 
 
@@ -294,39 +297,6 @@ void nodesetsJob() {
 
 double cpuTimeTaken(clock_t start, clock_t end) {
   return double(end - start);
-}
-
-
-
-
-
-#include "stdlib.h"
-#include "stdio.h"
-#include "string.h"
-
-int parseLine(char* line){
-  // This assumes that a digit will be found and the line ends in " Kb".
-  int i = strlen(line);
-  const char* p = line;
-  while (*p <'0' || *p > '9') p++;
-  line[i-3] = '\0';
-  i = atoi(p);
-  return i;
-}
-
-int getValue(){ //Note: this value is in KB!
-  FILE* file = fopen("/proc/self/status", "r");
-  int result = -1;
-  char line[128];
-  
-  while (fgets(line, 128, file) != NULL){
-    if (strncmp(line, "VmRSS:", 6) == 0){
-      result = parseLine(line);
-      break;
-    }
-  }
-  fclose(file);
-  return result;
 }
 
 
