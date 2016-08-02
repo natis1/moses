@@ -109,7 +109,7 @@ void fileReader::nodeArrayGenerator(){
     //Const char to char
     char line[128];
     strncpy(line, meshData.nodes[i].c_str(), sizeof(line));
-    char * substrings = strtok (line," -");
+    char * substrings = strtok (line," ");
     //Actually gets number - 1 because of the way its programmed.
     int dimensions = getNumberOfSubstrings(meshData.nodes[i]);
     
@@ -119,7 +119,7 @@ void fileReader::nodeArrayGenerator(){
     vector<double> v;
     v.reserve(dimensions);
     for (int j = 0; j < dimensions; j++) {
-      substrings = strtok (NULL, " -");
+      substrings = strtok (NULL, " ");
       v.push_back(stod(substrings));
     }
     numericalData.nodes.push_back(v);

@@ -22,7 +22,7 @@ void exoCommunicator(exoIIInputData inputs) {
   
   //Final int is api version
   int fileID = ex_create_int(inputs.globalVariables.directory.c_str(), __SIZEOF_DOUBLE__, &inputs.globalVariables.IOWordSize,
-                             &inputs.globalVariables.IOWordSize, inputs.globalVariables.databaseVersionNumber);
+                             &inputs.globalVariables.IOWordSize, EX_API_VERS_NODOT);
   
   
   //File ID, title, number of dimensions, number of nodes, number of elements
@@ -107,7 +107,7 @@ void exoCommunicator(exoIIInputData inputs) {
   
   //setting and allocating nodesets
   for (int i = 0; i < inputs.nodeSets.size(); i++) {
-    errorCode = ex_put_node_set_param(fileID, (i+1), inputs.nodeSets[i].size(), 0);
+    errorCode = ex_put_node_set_param(fileID, (i+1), inputs.nodeSets[i].size(), inputs.nodeSets[i].size());
     if (errorCode != 0) {
       cout << "Failed to add nodeset params" << endl;
       exit(errorCode);
@@ -117,15 +117,25 @@ void exoCommunicator(exoIIInputData inputs) {
         
     errorCode = ex_put_node_set(fileID, (i+1), (void_int*) nodeset);
     
+    vector<double> distribFactors;
+    distribFactors.reserve(inputs.nodeSets[i].size());
+    for (int j = 0; j < inputs.nodeSets[i].size(); j++) {
+      distribFactors.push_back(1.00000);
+    }
+    void *distribs = &(distribFactors[0]);
+    
+    
+    errorCode = ex_put_node_set_dist_fact(fileID, (i+1), distribs);
+    
     if (errorCode != 0) {
-      cout << "Failed to add nodeset nodes." << endl;
+      cout << "Failed to add nodeset nodes. ERROR: " << errorCode << endl;
       exit(errorCode);
     }
   }
   
   //setting and allocating sidesets
   for (int i = 0; i < inputs.sideSets.size(); i++) {
-    errorCode = ex_put_side_set_param(fileID, (i + 1), inputs.sideSets[i].components.size(), 0);
+    errorCode = ex_put_side_set_param(fileID, (i + 1), inputs.sideSets[i].components.size(), inputs.sideSets[i].components.size());
     if (errorCode != 0) {
       cout << "Failed to add sideset params" << endl;
       exit(errorCode);
@@ -141,6 +151,16 @@ void exoCommunicator(exoIIInputData inputs) {
     int *sideList    = &sides[0];
     
     errorCode = ex_put_side_set(fileID, (i+1), elementList, sideList);
+    
+    vector<double> distribFactors;
+    distribFactors.reserve(inputs.sideSets[i].components.size());
+    for (int j = 0; j < inputs.sideSets[i].components.size(); j++) {
+      distribFactors.push_back(1.00000);
+    }
+    void *distribs = &(distribFactors[0]);
+    
+    errorCode = ex_put_side_set_dist_fact(fileID, (i+1), distribs);
+    
     
     if (errorCode != 0) {
       cout << "Failed to add sidesets" << endl;
