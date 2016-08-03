@@ -79,7 +79,7 @@ void exoCommunicator(exoIIInputData inputs) {
   for (int i = 0; i < inputs.elementBlocks.size(); i++){
     //File ID, positive identifying integer, element name (see exoII docs), elements, nodes per element, attributes per element.
     errorCode = ex_put_elem_block(fileID, (i+1), inputs.elementBlocks[i].elementType.c_str(), inputs.elementBlocks[i].elements.size(),
-                                  inputs.elementBlocks[i].nodesPerElement, 0);
+                                  inputs.elementBlocks[i].nodesPerElement, 1);
     if (errorCode != 0) {
       cout << "Failed to add element blocks to exoII file." << endl;
       exit(errorCode);
@@ -96,8 +96,19 @@ void exoCommunicator(exoIIInputData inputs) {
         
       }
     }
-    void_int *connect = &connectivityArray[0];
+    void_int *connect = &(connectivityArray[0]);
+    cout << "100" << endl;
+    
     errorCode = ex_put_elem_conn(fileID, (i+1), connect);
+    
+    vector<double> attributesVector;
+    attributesVector.reserve(inputs.elementBlocks[i].elements.size());
+    for (int j = 0; j < inputs.elementBlocks[i].elements.size(); j++) {
+      attributesVector.push_back(1.00000);
+    }
+    void *attribs = &(attributesVector[0]);
+    
+    errorCode = ex_put_elem_attr(fileID, (i+1), attribs);
     
     if (errorCode != 0) {
       cout << "Failed to add element connectivity to exoII file." << endl;
@@ -132,6 +143,8 @@ void exoCommunicator(exoIIInputData inputs) {
       exit(errorCode);
     }
   }
+  
+  
   
   //setting and allocating sidesets
   for (int i = 0; i < inputs.sideSets.size(); i++) {

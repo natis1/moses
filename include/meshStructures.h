@@ -20,7 +20,7 @@ struct EXOIIGlobalVariables {
   std::string directory;
   std::string title = "untitled_mesh";
   int nodes;
-  int dimensions;
+  int dimensions = 3;
   int elements;
   int elementBlocks;
   int nodeSets;
@@ -46,6 +46,8 @@ struct EXOIIGlobalVariables {
   
   int sidesetTagMin = 101;
   int sidesetTagMax = 190;
+  
+  int elementBlockSize = 100;
 };
 
 
@@ -118,6 +120,8 @@ struct exoIINodesetComponent {
   int nodeID;
   int nodesetID;
 };
+
+
 
 
 

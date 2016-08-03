@@ -38,17 +38,21 @@ exoIIElement elementResolver(vector<vector<double>> *nodeList, vector<int> mshEl
 }
 
 
-vector<exoIIElementBlock> blockResolver(vector<exoIIElement> elements) {
+vector<exoIIElementBlock> blockResolver(vector<exoIIElement> elements, int dimensions, int elementBlockSize) {
   vector<exoIIElementBlock> blocks;
-  blocks.reserve(31);
+  
+  int neededBlocks = (((getMaximumElement(&element) - getMinimumElement(&elements)) / elementBlockSize) + 1) * 19;
+  blocks.reserve(neededBlocks);
+  
+  
   
   
 
   
   vector<exoIIElementBlock> temporaryBlocks;
-  temporaryBlocks.reserve(31);
-  for (int i = 0; i < 31; i++){
-    temporaryBlocks.push_back(exoIIElementBlock{blockID(i), nodesPerElement(i)});
+  temporaryBlocks.reserve(neededBlocks);
+  for (int i = 0; i < neededBlocks; i++){
+    temporaryBlocks.push_back(exoIIElementBlock{blockID(i, dimensions), nodesPerElement(i)});
   }
   for (int i = 0; i < elements.size(); i++) {
     temporaryBlocks[ elements[i].elementType - 1 ].elements.push_back(elements[i]);
@@ -64,8 +68,31 @@ vector<exoIIElementBlock> blockResolver(vector<exoIIElement> elements) {
   return blocks;
 }
 
+int getMinimumElement(vector<exoIIElement> *elements){
+  int minimum = 1073741824;
+  for (int i = 0; i < elements->size(); i++){
+    if (minimum > elements->at(i).elementTag){
+      minimum = elements->at(i).elementTag;
+    }
+  }
+  return minimum;
+  
+}
 
-string blockID(int block) {
+int getMaximumElement(vector<exoIIElement> *elements){
+  
+  int maximum = 0;
+  for (int i = 0; i < elements->size(); i++){
+    if (maximum < elements->at(i).elementTag){
+      maximum = elements->at(i).elementTag;
+    }
+  }
+  return maximum;
+  
+}
+
+
+string blockID(int block, int dimensions) {
   
   
   //Geometric shape is defined in the exodus manual
@@ -74,46 +101,95 @@ string blockID(int block) {
   //Keep in mind the number here is zero indexed while the number gmsh uses is 1 indexed
   switch (block) {
     //first order
-    case 0: return "TRUSS2";//               2/Trusses
-    case 1: return "TRIANGLE3";//             3/Triangles
-    case 2: return "SHELL4";//           4/Quadrangles
-    case 3: return "TETRA4";//          4/Tetrahedrons
-    case 4: return "HEX";//           8/Hexahedrons
-    case 5: return "WEDGE";//                6/Prisms
-    case 6: return "PYRAMID";//              5/Pyramids
+    case 0:
+      if (dimensions == 1) return "TRUSS2";//               2/Trusses
+      else if (dimensions == 2) return "SHELL2";
+      else if (dimensions == 3) return "INVLD_ELEMNT_3DTRUSS";// This cannot exist
+      
+    case 1:
+      if (dimensions == 1) return "INVLD_ELEMNT_1DTRI";// 1D triangles cannot exist, silly. At least not in this universe 🌠
+      else if (dimensions == 2) return "TRIANGLE3";
+      else if (dimensions == 3) return "INVLD_ELEMNT_3DTRI";// return "TRIANGLE3";//             3/Triangles
+    case 2:
+      if (dimensions == 1) return "INVLD_ELEMNT_1DQUAD";
+      else if (dimensions == 2) return "QUAD4";// Quad meshes
+      else if (dimensions == 3) return "SHELL4";// 3D shells
+    case 3:
+      if (dimensions == 1) return "INVLD_ELEMNT_1DTETRA";
+      else if (dimensions == 2) return "INVLD_ELEMNT_2DTETRA";// Tetrahedrons are exclusively 3D
+      else if (dimensions == 3) return "TETRA4";
+    case 4:
+      if (dimensions == 1) return "INVLD_ELEMNT_1DHEXA";
+      else if (dimensions == 2) return "INVLD_ELEMNT_2DHEXA";
+      else if (dimensions == 3) return "HEX8";//I think 8 is the minimum element size of a hexahedron
+    case 5:
+      if (dimensions == 1) return "INVLD_ELEMNT_1DWEDGE";
+      else if (dimensions == 2) return "INVLD_ELEMNT_2DWEDGE";
+      else if (dimensions == 3) return "WEDGE6";
+      return "WEDGE";//                6/Prisms
+    case 6:
+      if (dimensions == 1) return "INVLD_ELEMNT_1DPYRA";
+      else if (dimensions == 2) return "INVLD_ELEMNT_2DPYRA";
+      else if (dimensions == 3) return "PYRAMID5";
+      
     //second order
-    case 7: return "TRUSS";
-    case 8: return "TRIANGLE";
-    case 9: return "QUADRANGLE";
-    case 10: return "TETRA";
-    case 11: return "HEX";
-    case 12: return "WEDGE";
-    case 13: return "PYRAMID";
-    case 14: return "CIRCLE";  //TODO add circle support
-    case 15: return "QUADRANGLE";
-    case 16: return "HEX";
-    case 17: return "WEDGE";
-    case 18: return "PYRAMID";
-    //third+ order
-    
-    //9, 12, 15 triangles are incomplete and may be buggy
-    //TODO figure out what to do with incomplete triangles
-    case 19: return "TRIANGLE";//incomplete
-    case 20: return "TRIANGLE";
-    case 21: return "TRIANGLE";//incomplete
-    case 22: return "TRIANGLE";//incomplete
-    case 23: return "TRIANGLE";
-    case 24: return "TRIANGLE";
-    //TODO: add edges to things which determine sidesets
-    case 25: return "BEAM";//Edges, or 4th-6th order TRUSS
-    case 26: return "BEAM";
-    case 27: return "BEAM";
-    case 28: return "TETRA";//20
-    case 29: return "TETRA";//35
-    case 30: return "TETRA";//56
-    
+    case 7:
+      if (dimensions == 1) return "TRUSS3";
+      else if (dimensions == 2) return "SHELL3";
+      else if (dimensions == 3) return "INVLD_ELEMNT_3DTRUSS";
+    case 8:
+      if (dimensions == 1) return "INVLD_ELEMNT_1DTRI";
+      else if (dimensions == 2) return "TRIANGLE6";
+      else if (dimensions == 3) return "INVLD_ELEMNT_3DTRI";
+    case 9:
+      if (dimensions == 1) return "INVLD_ELEMNT_1DQUAD";
+      else if (dimensions == 2) return "QUAD9";
+      else if (dimensions == 3) return "SHELL9";
+    case 10:
+      if (dimensions == 1) return "INVLD_ELEMNT_1DTETRA";
+      else if (dimensions == 2) return "INVLD_ELEMNT_2DTETRA";
+      else if (dimensions == 3) return "TETRA10";
+    case 11:
+      if (dimensions == 1) return "INVLD_ELEMNT_1DHEXA";
+      else if (dimensions == 2) return "INVLD_ELEMNT_2DHEXA";
+      else if (dimensions == 3) return "HEX27";
+    case 12:
+      if (dimensions == 1) return "INVLD_ELEMNT_1DWEDGE";
+      else if (dimensions == 2) return "INVLD_ELEMNT_2DWEDGE";
+      else if (dimensions == 3) return "WEDGE18";
+    case 13:
+      if (dimensions == 1) return "INVLD_ELEMNT_1DPYRA";
+      else if (dimensions == 2) return "INVLD_ELEMNT_2DPYRA";
+      else if (dimensions == 3) return "PYRAMID14";//Pyramid isn't supported in like any finite element program but it is in Gmsh.
+    case 14:
+      //Not a bug, there is no real way for someone to specify circle radius in Gmsh. It's just impossible.
+      //If they ever add floating points to elements (such as a floating point tag) I can add this.
+      return "CIRCLE_NOT_SUPPORTED";
+    case 15:
+      if (dimensions == 1) return "INVLD_ELEMNT_1DQUAD";
+      else if (dimensions == 2) return "QUAD8";//Second order without centerpoint
+      else if (dimensions == 3) return "SHELL8";
+    case 16:
+      if (dimensions == 1) return "INVLD_ELEMNT_1DHEXA";
+      else if (dimensions == 2) return "INVLD_ELEMNT_2DHEXA";
+      else if (dimensions == 3) return "HEX20";//Second order without faces
+    case 17:
+      if (dimensions == 1) return "INVLD_ELEMNT_1DWEDGE";
+      else if (dimensions == 2) return "INVLD_ELEMNT_2DWEDGE";
+      else if (dimensions == 3) return "WEDGE15";
+    case 18:
+      if (dimensions == 1) return "INVLD_ELEMNT_1DPYRA";
+      else if (dimensions == 2) return "INVLD_ELEMNT_2DPYRA";
+      else if (dimensions == 3) return "PYRAMID13";
+  }
+  if (dimensions < 1 || dimensions > 3) {
+    cout << "You are seeing this because you think you are so clever.\n"
+    "You think that you can mesh in " << dimensions << " dimensions.\n"
+    "Well, you can't, exodus is 1-3D. Moses is exiting to prevent segfault." << endl;
+    exit(1);
   }
   
+  return "UNKNOWN_ELEM";
   
   
 }

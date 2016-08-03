@@ -76,32 +76,17 @@ int main (int argc, char* argv[]) {
   
   cout << elapsedSeconds.count() << " To read file " << endl;
   
-  start = chrono::system_clock::now();
-  
   globals.elements = fi->meshData.elementNumber;
   globals.nodes = fi->meshData.nodeNumber;
   importedMeshes.nodes = fi->numericalData.nodes;
   importedMeshes.elements.reserve(globals.elements);
   
-  end = chrono::system_clock::now();
-  elapsedSeconds = end - start;
-  cout << elapsedSeconds.count() << " To import meshData " << endl;
-  
-  
-    
   start = chrono::system_clock::now();
-  
-  
   importedMeshes.elements.assign(globals.elements,{});
   dlib::parallel_for(globals.threads, 0, globals.elements, [&](long i) {
     importedMeshes.elements[i] = elementConverter(elementResolver(&importedMeshes.nodes, fi->numericalData.elements[i]));
-    if (i % 1000 == 0){
-      cout << "added " << (i + 1) << "/" << globals.elements << "\n";
-    }
+    
   });
-  
-  
-  
   end = chrono::system_clock::now();
   elapsedSeconds = end - start;
   cout << elapsedSeconds.count() << " To convert elements" << endl;
@@ -129,10 +114,12 @@ int main (int argc, char* argv[]) {
   
   
   importedMeshes.elements = removeSets( &(importedMeshes.elements), globals.nodesetTagMin, globals.sidesetTagMax);
-  allInputs.elementBlocks = blockResolver(importedMeshes.elements);
+  allInputs.elementBlocks = blockResolver(importedMeshes.elements, globals.dimensions, globals.elementBlockSize);
   allInputs.flippedNodes = flipNodes(importedMeshes.nodes);
   globals.elements   = importedMeshes.elements.size();
-  globals.dimensions = allInputs.flippedNodes.size();
+  
+  //globals.dimensions = allInputs.flippedNodes.size();
+  
   globals.elementBlocks = allInputs.elementBlocks.size();
   globals.sideSets = allInputs.sideSets.size();
   globals.nodeSets = allInputs.nodeSets.size();
@@ -184,7 +171,8 @@ int parseInput (int argc, char* argv[]) {
 
         current_arg++;
         io.outputFile=argv[current_arg];
-
+        cout << "Output File: " << io.outputFile << endl;
+        
       } else if ((strcmp(argv[current_arg], "-f") == 0 )) {
         useStandardInput = true;
 
@@ -193,30 +181,31 @@ int parseInput (int argc, char* argv[]) {
         cout << "Moses converts GMSH files into ExodusII files for use with Sandia software." << endl;
         cout << "" << endl;
         cout << "Example Use:" << endl;
-        cout << "moses -i foo.msh            \t# Create foo.exoII from data inside foo.msh." << endl;
-        cout << "moses -i foo.msh -n fooie   \t# Create foo.exoII with the name 'fooie'" << endl;
+        cout << "moses -i foo.msh            \t# Create 3D foo.exoII from data inside foo.msh." << endl;
+        cout << "moses -i bar.msh -m fooie -d 2\t# Create 2D bar.exoII with the name 'fooie'" << endl;
         cout << "" << endl;
         //                                                                                V Any text hitting this line will get cut off in an 80 char
         cout << "Modifiers:" << endl;//                                                   |
         cout << "" << endl;//                                                             |Frankly I think this is kind of a stupid limitation
-        cout << "-A INT\t\t--exoapi\tAPI version number" << endl;//                       |I mean I am not writing fortran code
+        cout << "-B INT\t\t--block-size\tElement block size (100) (see man moses)" << endl;//I mean I am not writing fortran code
         cout << "-d INT\t\t--dimensions\tNumber of dimensions " << endl;//                |But like you never know when someone on their
-        cout << "-D INT\t\t--database\tDatabase version number" << endl;//                |3 inch raspberry pi screen is gonna be doing
+//                                                                                        |3 inch raspberry pi screen is gonna be doing
         cout << "-f \t\t--force\t\tUse standard input if no input file is given." << endl;// finite element simulations and they need
         cout << "-h \t\t--help\t\tView this help menu (see also man moses)." << endl;//   | to see what they are doing.
-        cout << "-i PATH\t\t--input\t\tOne of more input files." << endl;//               |
-        cout << "-I INT\t\t--io-size\tThe size (in bits) of floats (8)" << endl;//        | Barely threading the needle
-        cout << "-L INT\t\t--line-length\tThe Exodus Fortran character line length (80)" << endl;
-        cout << "-m INT\t\t--minimum-grp\tThe first group converted to node/side sets (10)" << endl;
-        cout << "-M INT\t\t--maximum-grp\tThe last group converted to node/side sets (100)" << endl;
-        cout << "-n STRING\t--name\t\tExodusII mesh name" << endl;//                      |
+        cout << "-i PATH\t\t--input\t\tOne of more input files." << endl;//               
+        cout << "-I INT\t\t--io-size\tThe size (in bits) of floats (8)" << endl;//        
+        cout << "-m STRING\t--name\t\tExodusII mesh name" << endl;
+        cout << "-n INT\t\t--ns-min\tThe first physical group nodeset detector (10)" << endl;
+        cout << "-N INT\t\t--ns-max\tThe last physical group nodeset detector (100)" << endl;
         cout << "-o PATH\t\t--output\tSpecify a file to write to." << endl;
         cout << "-t INT\t\t--threads\tThe number of threads to use when possible (1)" << endl;
-        cout << "-S INT\t\t--string-length\tThe Exodus Fortran max string length (32)" << endl;
-        cout << "-Q PATH\t\t--qa-inpath\tRead QA info from file (see man moses)" << endl;
+        cout << "-s INT\t\t--ss-min\tThe first physical group sideset detector (101)" << endl;
+        cout << "-S INT\t\t--ss-max\tThe last physical group sideset detector (190)" << endl;
 
-        cout << "" << endl;
-        cout << "" << endl;
+        cout << "The sideset physical group tags must not overlap" << endl;
+        cout << "and be greater than the nodeset physical group tags." << endl;
+        cout << endl;
+        cout << endl;
         cout << "Please look at \"man moses\" for more information" << endl;
 
         return 1;
@@ -224,36 +213,38 @@ int parseInput (int argc, char* argv[]) {
       } else if ((strcmp(argv[current_arg], "-d") == 0 ) || (strcmp(argv[current_arg], "--dimensions") == 0 )) {
         current_arg++;
         globals.dimensions = atoi(argv[current_arg]);
-      } else if ((strcmp(argv[current_arg], "-A") == 0 ) || (strcmp(argv[current_arg], "--exoapi") == 0 )) {
-        current_arg++;
-        globals.APIVersionNumber = atoi(argv[current_arg]);
-      } else if ((strcmp(argv[current_arg], "-D") == 0 ) || (strcmp(argv[current_arg], "--database") == 0 )) {
-        current_arg++;
-        globals.databaseVersionNumber = atoi(argv[current_arg]);
+        cout << "Mesh dimensions: " << globals.dimensions << endl;
       } else if ((strcmp(argv[current_arg], "-I") == 0 ) || (strcmp(argv[current_arg], "--io-size") == 0 )) {
         current_arg++;
         globals.IOWordSize = atoi(argv[current_arg]);
-      } else if ((strcmp(argv[current_arg], "-D") == 0 ) || (strcmp(argv[current_arg], "--line-length") == 0 )) {
+      } else if ((strcmp(argv[current_arg], "-s") == 0 ) || (strcmp(argv[current_arg], "--ss-min") == 0 )) {
         current_arg++;
-        globals.CharacterLineLength = atoi(argv[current_arg]);
-      } else if ((strcmp(argv[current_arg], "-S") == 0 ) || (strcmp(argv[current_arg], "--string-length") == 0 )) {
+        globals.sidesetTagMin = atoi(argv[current_arg]);
+        cout << "Sideset minimum tag: " << globals.sidesetTagMin;
+      } else if ((strcmp(argv[current_arg], "-S") == 0 ) || (strcmp(argv[current_arg], "--ss-max") == 0 )) {
         current_arg++;
-        globals.CharacterStringLength = atoi(argv[current_arg]);
-      } else if ((strcmp(argv[current_arg], "-n") == 0 ) || (strcmp(argv[current_arg], "--name") == 0 )) {
-        current_arg++;
-        globals.title = argv[current_arg];
-      } else if ((strcmp(argv[current_arg], "-Q") == 0 ) || (strcmp(argv[current_arg], "--qa-inpath") == 0 )) {
-        current_arg++;
-        io.qaFile = argv[current_arg];
-      } else if ((strcmp(argv[current_arg], "-m") == 0 ) || (strcmp(argv[current_arg], "--minimum-grp") == 0 )) {
+        globals.sidesetTagMax = atoi(argv[current_arg]);
+        cout << "Sideset maximum tag: " << globals.sidesetTagMax;
+      } else if ((strcmp(argv[current_arg], "-n") == 0 ) || (strcmp(argv[current_arg], "--ns-min") == 0 )) {
         current_arg++;
         globals.nodesetTagMin = atoi(argv[current_arg]);
-      } else if ((strcmp(argv[current_arg], "-M") == 0 ) || (strcmp(argv[current_arg], "--maximum-grp") == 0 )) {
+        cout << "Sideset minimum tag: " << globals.sidesetTagMin;
+      } else if ((strcmp(argv[current_arg], "-N") == 0 ) || (strcmp(argv[current_arg], "--ns-max") == 0 )) {
         current_arg++;
         globals.nodesetTagMax = atoi(argv[current_arg]);
-      } else if ((strcmp(argv[current_arg], "-I") == 0 ) || (strcmp(argv[current_arg], "--io-size") == 0 )) {
+        cout << "Sideset maximum tag: " << globals.sidesetTagMax;
+      } else if ((strcmp(argv[current_arg], "-m") == 0 ) || (strcmp(argv[current_arg], "--name") == 0 )) {
+        current_arg++;
+        globals.title = argv[current_arg];
+        cout << "Mesh name: " << globals.title << endl;
+      } else if ((strcmp(argv[current_arg], "-t") == 0 ) || (strcmp(argv[current_arg], "--threads") == 0 )) {
         current_arg++;
         globals.threads = atoi(argv[current_arg]);
+        cout << "Using " << globals.threads << " threads" << endl;
+      } else if ((strcmp(argv[current_arg], "-B") == 0 ) || (strcmp(argv[current_arg], "--block-size") == 0 )) {
+        current_arg++;
+        globals.threads = atoi(argv[current_arg]);
+        cout << "Block size: " << globals.elementBlockSize << "" << endl;
       }
 
     }
