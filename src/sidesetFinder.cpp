@@ -6,7 +6,7 @@ using namespace std;
 
 
 vector<exoIISideSet> automaticSidesetFinder ( vector<exoIIElement> *allElements, int minimumSSTag, int maximumSSTag,
-                                              vector<exoIIElement> *sidesetElements, int threads, int elementSize) {
+                                              vector<exoIIElement> *sidesetElements, int threads, int elementSize, int dimensions) {
   
   
   
@@ -23,8 +23,9 @@ vector<exoIISideSet> automaticSidesetFinder ( vector<exoIIElement> *allElements,
     for (int j = 0; j < elementSize; j++){
       if ( fastSSScan( &(sidesetElements->at(i)), &(allElements->at(j))) ) {
         
-        exoIISideSetComponent ss = SSScanner ( sidesetElements->at(i), allElements->at(j), j, (sidesetElements->at(i).elementTag - minimumSSTag) );
+        exoIISideSetComponent ss = SSScanner ( sidesetElements->at(i), allElements->at(j), j, dimensions);
         if (ss.elementSide != -1){
+          ss.sideSetID = sidesetElements->at(i).elementTag - minimumSSTag;
           sidesets.push_back(ss);
           
           sidesetCount++;
@@ -90,27 +91,26 @@ bool fastSSScan ( exoIIElement *sideset, exoIIElement *testedElement ) {
 
 //...ssssssscanner
 //Returns a sideset with element ID -1 and element side -1 if the scan doesn't turn anything up.
-exoIISideSetComponent SSScanner ( exoIIElement sideset, exoIIElement testedElement, int elementID, int sideSetID) {
+exoIISideSetComponent SSScanner ( exoIIElement sideset, exoIIElement testedElement, int elementID, int dimensions) {
   exoIISideSetComponent ss;
   
   switch (testedElement.elementType) {
-    case  1: ss = TwoDimensionalSSScan(sideset, testedElement, elementID); break;
-    case  2: ss = TwoDimensionalSSScan(sideset, testedElement, elementID); break;
-    case  3: ss = TwoDimensionalSSScan(sideset, testedElement, elementID); break;
+    case  1: ss = TwoDimensionalSSScan(sideset, testedElement, elementID, dimensions); break;
+    case  2: ss = TwoDimensionalSSScan(sideset, testedElement, elementID, dimensions); break;
+    case  3: ss = TwoDimensionalSSScan(sideset, testedElement, elementID, dimensions); break;
     case  4: ss = tetra4Scan(sideset, testedElement, elementID); break;
     case  10:ss = quad89SSScan(sideset, testedElement, elementID); break;
     case  16:ss = quad89SSScan(sideset, testedElement, elementID); break;
     
   }
   //Unknown type but I can try anyway
-  ss = TwoDimensionalSSScan(sideset, testedElement, elementID);
-  ss.sideSetID = sideSetID;
+  ss = TwoDimensionalSSScan(sideset, testedElement, elementID, dimensions);
   
   return ss;
 }
 
 //For testing simple elements
-exoIISideSetComponent TwoDimensionalSSScan (exoIIElement sideset, exoIIElement testedElement, int elementID) {
+exoIISideSetComponent TwoDimensionalSSScan (exoIIElement sideset, exoIIElement testedElement, int elementID, int dimensions) {
   
   exoIISideSetComponent ss;
   int elementSize = testedElement.nodeIDs.size();
@@ -119,16 +119,16 @@ exoIISideSetComponent TwoDimensionalSSScan (exoIIElement sideset, exoIIElement t
     return { -1, -1, -1};
   }
   
-  int lastNodeMatched = -2;
+  int lastNodeMatched = -3;
   bool firstNodeMatched = false;
   
   
-  for (int i = 0; i < elementSize; i++) {
+  for (int i = 0; i < testedElement.nodeIDs.size(); i++) {
     for (int j = 0; j < sideset.nodeIDs.size(); j++) {
-      if (sideset.nodeIDs[j] == testedElement.nodeIDs[j]) {
+      if (coordinateCompare ( &(sideset.nodalCoordinates[j]), &(testedElement.nodalCoordinates[i]), dimensions)) {
         
         if (lastNodeMatched == i - 1 || (firstNodeMatched && i == (elementSize - 1) ) ) {
-          return { elementID, (i + 1), 0 };
+          return { elementID, (i), 0 };
         }
         
         if (i == 0) firstNodeMatched = true;
@@ -138,6 +138,18 @@ exoIISideSetComponent TwoDimensionalSSScan (exoIIElement sideset, exoIIElement t
     }
   }
   return {-1, -1, -1};
+  
+}
+
+bool coordinateCompare (vector<double> *element1, vector<double> *element2, int dimensions) {
+  int dimPassed = 0;
+  for (int i = 0; i < dimensions; i++) {
+    if (element1->at(i) == element2->at(i)) {
+      dimPassed++;
+    }
+  }
+  
+  return (dimPassed == dimensions);
   
 }
 

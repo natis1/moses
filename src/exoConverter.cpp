@@ -40,11 +40,15 @@ exoIIElement elementResolver(vector<vector<double>> *nodeList, vector<int> mshEl
 
 vector<exoIIElementBlock> blockResolver(vector<exoIIElement> elements, int dimensions, int elementBlockSize) {
   vector<exoIIElementBlock> blocks;
+  int max = getMaximumElement(&elements);
+  int min = getMinimumElement(&elements);
   
-  int neededBlocks = (((getMaximumElement(&element) - getMinimumElement(&elements)) / elementBlockSize) + 1) * 19;
+  
+  
+  int neededBlocks = ((((max - min) / elementBlockSize) + 1) * 19);
   blocks.reserve(neededBlocks);
   
-  
+  cout << neededBlocks << "blocks needed" << endl;
   
   
 
@@ -52,10 +56,10 @@ vector<exoIIElementBlock> blockResolver(vector<exoIIElement> elements, int dimen
   vector<exoIIElementBlock> temporaryBlocks;
   temporaryBlocks.reserve(neededBlocks);
   for (int i = 0; i < neededBlocks; i++){
-    temporaryBlocks.push_back(exoIIElementBlock{blockID(i, dimensions), nodesPerElement(i)});
+    temporaryBlocks.push_back(exoIIElementBlock{blockID( (i % 19), dimensions), nodesPerElement(i % 19)});
   }
   for (int i = 0; i < elements.size(); i++) {
-    temporaryBlocks[ elements[i].elementType - 1 ].elements.push_back(elements[i]);
+    temporaryBlocks[ elements[i].elementType - 1 + (((elements[i].elementTag - min) / elementBlockSize) * 19) ].elements.push_back(elements[i]);
   }
   
   

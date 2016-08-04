@@ -24,6 +24,9 @@
 exoIIElement elementResolver(std::vector< std::vector< double > >* nodeList, std::vector< int > mshElement);
 exoIIElement elementConverter(exoIIElement inputElement);
 
+int getMinimumElement(std::vector<exoIIElement> *elements);
+int getMaximumElement(std::vector<exoIIElement> *elements);
+
 
 std::vector<exoIIElementBlock> blockResolver(std::vector< exoIIElement > elements, int dimensions, int elementBlockSize);
 std::string blockID(int block, int dimensions);

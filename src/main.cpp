@@ -272,7 +272,7 @@ int parseInput (int argc, char* argv[]) {
 void sidesetsJob() {
   vector<exoIIElement> sidesets = sideSetExtractor( &(importedMeshes.elements), globals.sidesetTagMin, globals.sidesetTagMax);
   allInputs.sideSets = automaticSidesetFinder(&(importedMeshes.elements), globals.sidesetTagMin, globals.sidesetTagMax,
-&sidesets, globals.threads, importedMeshes.actualElementNumber);  
+&sidesets, globals.threads, importedMeshes.actualElementNumber, globals.dimensions);  
 }
 
 
