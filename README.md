@@ -24,6 +24,17 @@ For more information on this and my other projects, please see the website.
 
 ### Building Moses
 
+1) Clone this git repository.
+
+2) Change into the dep repository.
+
+`./buildDependancies.sh` (-j n to specify number of make jobs)
+
+`mkdir build`
+
+`cmake ..`
+
+`make`
 
 ### License information
 Moses, like all my other one man projects, is licensed under the GPLv3. It basically means you can reuse this code in your open source projects (or personal ones) as long as you keep it open source. If you want to use this code but not distribute it (editing it for your own benefit), the GPL allows you to do so. Fork my projects and let's make the best Exodus generator around.
